@@ -1,0 +1,16 @@
+.text {
+  margin-bottom: 15px;
+  font-size: 21px;
+  font-weight: 200;
+}
+
+.buttonLeft {
+  margin-right: 4px;
+}
+
+.code {
+  color: #c7254e;
+  background-color: #f8f2f4;
+  padding: 2px 4px;
+  border-radius: 4px;
+}

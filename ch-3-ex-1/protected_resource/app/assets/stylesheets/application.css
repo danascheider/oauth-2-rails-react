@@ -1,0 +1,131 @@
+/*
+ * This is a manifest file that'll be compiled into application.css, which will include all the files
+ * listed below.
+ *
+ * Any CSS (and SCSS, if configured) file within this directory, lib/assets/stylesheets, or any plugin's
+ * vendor/assets/stylesheets directory can be referenced here using a relative path.
+ *
+ * You're free to add application-wide styles to this file and they'll appear at the bottom of the
+ * compiled file so the styles you add here take precedence over styles defined in any other CSS
+ * files in this directory. Styles in this file should be added after the last require_* statement.
+ * It is generally better to create a new file per style scope.
+ *
+ *= require_tree .
+ *= require_self
+ */
+
+/*
+ *
+ * Global Styles
+ *
+ */
+
+body {
+  --header-padding-vertical: 16px;
+  --success-green: #5cb85c;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+}
+
+code {
+  color: #c7254e;
+  background-color: #f8f2f4;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.label {
+  display: inline-block;
+  font-weight: 700;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 3px;
+}
+
+.btn {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.42857143;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.label-success {
+  background-color: var(--success-green);
+  color: #fff;
+}
+
+.text-success {
+  color: var(--success-green);
+}
+
+/*
+ *
+ * Header Styles
+ *
+ */
+
+#pageHeader {
+  width: 100%;
+  padding-top: var(--header-padding-vertical);
+  padding-bottom: var(--header-padding-vertical);
+  background-color: #333;
+}
+
+#pageHeader > nav {
+  width: 70%;
+  padding: 0;
+  margin: 0 auto;
+}
+
+#pageHeader > nav > h1.title {
+  line-height: 20px;
+  display: inline-block;
+  padding-right: 4px;
+}
+
+#pageHeader > nav > h1.title > a {
+  color: #9d9d9d;
+  display: inline;
+  font-size: 18px;
+  text-decoration: none;
+}
+
+#pageHeader > nav > h1.title > a:hover {
+  color: #fff;
+}
+
+/*
+ *
+ * Page Content Styles
+ *
+ */
+
+#pageContent {
+  width: 100%;
+  background-color: #fff;
+  padding-top: 60px;
+}
+
+#pageContent > .container {
+  width: 70%;
+  margin: 0 auto;
+  background-color: #eee;
+  padding: 48px;
+  border-radius: 6px;
+}
+
+.content-header {
+  margin-bottom: 10px;
+  font-weight: 500;
+  font-size: 30px;
+  line-height: 1.1;
+}
