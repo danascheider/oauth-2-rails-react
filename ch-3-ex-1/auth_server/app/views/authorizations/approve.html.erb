@@ -1,6 +1,6 @@
 <h2 class='content-header'>Approve this Client?</h2>
 
-<p><strong>ID:</strong> <code><%= client.client_id %></code></p>
+<p class='content-large'><strong>ID:</strong> <code><%= client.client_id %></code></p>
 
 <%= form_with url: approve_path, method: :post do |form| %>
   <%= form.hidden_field :reqid, value: request.reqid %>

@@ -24,9 +24,12 @@ body {
   --header-padding-vertical: 16px;
   --danger-red-light: #d9534f;
   --danger-red-dark: #d43f3a;
+  --success-green-light: #5cb85c;
+  --success-green-dark: #4cae4c;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 14px;
   color: #333;
+  margin: 0;
 }
 
 code {
@@ -70,12 +73,22 @@ code {
 
 .btn-danger {
   background-color: var(--danger-red-light);
-  border-color: var(--danger-red-dark);
   color: #fff;
+  border: 1px solid var(--danger-red-dark);
 }
 
 .btn-danger:hover {
   background-color: var(--danger-red-dark);
+}
+
+.btn-success {
+  background-color: var(--success-green-light);
+  color: #fff;
+  border: 1px solid var(--success-green-dark);
+}
+
+.btn-success:hover {
+  background-color: var(--success-green-dark);
 }
 
 /*
@@ -151,4 +164,8 @@ li:first-child {
 
 li:last-child {
   padding-bottom: 0;
+}
+
+.content-large {
+  font-size: 21px;
 }
