@@ -15,7 +15,7 @@ class ResourcesController < ApplicationController
       'Authorization' => "Bearer #{access_token.access_token}"
     }
 
-    resource_resp = Faraday.post(configatron.oauth.resource.endpoint, nil, headers)
+    resource_resp = Faraday.get(configatron.oauth.resource.endpoint, nil, headers)
 
     if resource_resp.success?
       resource = JSON.parse(resource_resp.body, symbolize_names: true)

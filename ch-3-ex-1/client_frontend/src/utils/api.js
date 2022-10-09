@@ -1,4 +1,5 @@
 const baseUri = 'http://localhost:4001'
+// TODO: I think this is actually supposed to be a response header
 const headers = {
   'Access-Control-Allow-Origin': 'http://localhost:4000'
 }
@@ -15,11 +16,8 @@ export const getCallback = queryString => {
   return fetch(uri)
 }
 
-export const getResource = async () => {
+export const getResource = () => {
   const uri = `${baseUri}/fetch_resource`
 
   return fetch(uri)
-    .then(resp => (
-      resp.json().then(data => ({ status: resp.status, data }))
-    ))
 }
