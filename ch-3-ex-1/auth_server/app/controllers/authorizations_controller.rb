@@ -6,6 +6,8 @@ require 'securerandom'
 require 'base64'
 
 class AuthorizationsController < ApplicationController
+  skip_forgery_protection
+
   INVALID_CLIENT = 'invalid_client'
   INVALID_SCOPE = 'invalid_scope'
   INVALID_GRANT = 'invalid_grant'
@@ -44,7 +46,7 @@ class AuthorizationsController < ApplicationController
 
       if (request_scope - client_scope).present?
         # TODO: Specified as a query string param in the original Express app
-        url_parsed = URI.parse(params[:redirect_uri])
+        url_parsed = URI.parse(CGI.unescape(params[:redirect_uri]))
         query = CGI.parse(url_parsed.query || '')
         query['error'] = INVALID_SCOPE
         url_parsed.query = URI.encode_www_form(query)
@@ -70,23 +72,24 @@ class AuthorizationsController < ApplicationController
     req = Request.find_by(reqid: params[:reqid])
 
     if req.nil?
-      @error = 'No matching authorization request.'
-      render 'error', status: :forbidden
+      render 'error', locals: { error: 'No matching authorization request.' }, status: :forbidden
+      return
     end
 
     req_attrs = req.attributes
     req.destroy!
 
-    url_parsed = URI.parse(params[:redirect_uri])
-    req_query = request.query_parameters
+    url_parsed = URI.parse(CGI.unescape(req_attrs['redirect_uri']))
+    req_query = CGI.parse(req.query).map {|key, value| value.length == 1 ? [key, value[0]] : [key, value] }.to_h
 
     # TODO: Specified as a post body param in the original Express app
     if params[:approve]
-      if req_attrs[:query] == 'code'
+      resp_query = CGI.parse(url_parsed.query || '')
+
+      if req_query['response_type'] == 'code'
         code = SecureRandom.hex(8)
         user = params[:user]
-        resp_query = CGI.parse(url_parsed.query || '')
-        client = Client.find_by(client_id: req_query[:client_id])
+        client = Client.find_by(client_id: req_query['client_id'])
 
         # TODO: What if the client is not found?
         # TODO: What if the client does not match the client ID in the req_attributes?
@@ -99,36 +102,44 @@ class AuthorizationsController < ApplicationController
         client_scope = client&.scope || []
 
         if (request_scope - client_scope).present?
+          Rails.logger.error 'Invalid scope - authorization code not created'
+
           resp_query['error'] = INVALID_SCOPE
           url_parsed.query = URI.encode_www_form(resp_query)
 
-          redirect_to url_parsed, status: :found
+          redirect_to url_parsed.to_s, status: :found
+          return
         end
 
         # TODO: Should authorization codes have a client ID associated?
         AuthorizationCode.create!(
           code:,
-          authorization_endpoint_request: resp_query,
+          authorization_endpoint_request: req_query,
           scope: request_scope,
-          user: user
+          user:
         )
 
+        Rails.logger.debug "Authorization code created with code #{code}"
+
         resp_query['code'] = code
-        resp_query['state'] = req_query[:state]
+        resp_query['state'] = req_query['state']
         url_parsed.query = URI.encode_www_form(resp_query)
 
-        redirect_to url_parsed, status: :found
+        redirect_to url_parsed.to_s, status: :found
       else
+        Rails.logger.error 'Unsupported response type - authorization code not created'
         resp_query['error'] = UNSUPPORTED_RESPONSE_TYPE
         url_parsed.query = URI.encode_www_form(resp_query)
 
-        redirect_to url_parsed, status: :found
+        redirect_to url_parsed.to_s, status: :found
       end
     else
+      Rails.logger.error 'Access denied - authorization code not created'
+
       resp_query['error'] = ACCESS_DENIED
       url_parsed.query = URI.encode_www_form(resp_query)
 
-      redirect_to url_parsed, status: :found
+      redirect_to url_parsed.to_s, status: :found
     end
   end
 
@@ -137,14 +148,13 @@ class AuthorizationsController < ApplicationController
 
     if auth.present?
       client_credentials = Base64
-                             .decode64(auth.gsub(/basic /i, ''))
+                             .decode64(auth.gsub(/bearer /i, ''))
                              .split(':')
                              .map {|string| CGI.unescape(string) }
 
       # TODO: What if there are more or less than 2 elements in the array?
 
-      client_id = client_credentials.first
-      client_secret = client_credentials.last
+      client_id, client_secret = client_credentials
     end
 
     # TODO: The original JS indicates this is a key in the request body, not a query param.
@@ -154,6 +164,7 @@ class AuthorizationsController < ApplicationController
       if defined?(client_id)
         Rails.logger.error 'Client attempted to authenticate by multiple methods.'
         render json: { error: INVALID_CLIENT }, status: :unauthorized
+        return
       end
 
       client_id = params[:client_id]
@@ -168,16 +179,20 @@ class AuthorizationsController < ApplicationController
     if client.nil?
       Rails.logger.error "Unknown client #{client_id}"
       render json: { error: INVALID_CLIENT }, status: :unauthorized
+      return
     end
 
     if client_secret != client.client_secret
       # Just for illustration, hopefully no auth server actually logs this lol
       Rails.logger.error "Mismatched client secret, expected #{client.client_secret}, got #{client_secret}"
       render json: { error: INVALID_CLIENT }, status: :unauthorized
+      return
     end
 
     # TODO: Specified as a post body param in the original Express app
     if params[:grant_type] == GRANT_TYPES[:authorization_code]
+      Rails.logger.debug "Grant type: 'authorization_code', authorization code '#{params[:code]}'"
+
       # TODO: Specified as a post body param in the original Express app
       code = AuthorizationCode.find_by(code: params[:code])
 
@@ -185,9 +200,9 @@ class AuthorizationsController < ApplicationController
         code_attrs = code.attributes
         code.destroy!
 
-        if code_attrs[:authorization_endpoint_request][:client_id] == client_id
+        if code_attrs['authorization_endpoint_request']['client_id'] == client_id
           token = SecureRandom.hex(32)
-          scope = code_attrs[:scope]&.join(' ')
+          scope = code_attrs['scope']&.join(' ')
 
           access_token = AccessToken.new(client:, token:, scope:)
 
@@ -208,7 +223,7 @@ class AuthorizationsController < ApplicationController
             # TODO: Handle the case where the access token cannot be saved
           end
         else
-          Rails.logger.error "Client mismatch: expected #{code_attrs[:authorization_endpoint_request][:client_id]}, got #{client_id}"
+          Rails.logger.error "Client mismatch: expected #{code_attrs['authorization_endpoint_request']['client_id']}, got #{client_id}"
           render json: { error: INVALID_GRANT }, status: :bad_request
         end
       else

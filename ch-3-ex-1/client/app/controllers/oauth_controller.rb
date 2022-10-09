@@ -10,6 +10,7 @@ class OauthController < ApplicationController
       state: SecureRandom.hex(8),
       response_type: 'code',
       client_id: configatron.oauth.client.client_id,
+      scope: 'foo',
       redirect_uri: configatron.oauth.client.redirect_uris[0]
     }
 
@@ -17,7 +18,7 @@ class OauthController < ApplicationController
     query = CGI.parse(uri.query || '').merge(data)
     uri.query = URI.encode_www_form(data)
 
-    AuthorizationRequest.create!(data.except(:client_id))
+    AuthorizationRequest.create!(data.except(:client_id, :scope))
 
     redirect_to uri.to_s, status: :found
   end
@@ -29,6 +30,7 @@ class OauthController < ApplicationController
     if corresponding_request.nil?
       Rails.logger.error "No corresponding request found for state '#{params[:state]}'"
       render json: { error: 'State value did not match' }, status: :bad_request
+      return
     end
 
     query_string = {
@@ -38,7 +40,7 @@ class OauthController < ApplicationController
     }
 
     headers = {
-      'Content-Type' => 'x-www-form-url-encoded',
+      'Content-Type' => 'application/x-www-form-urlencoded',
       'Authorization' => "Bearer #{client_bearer_token}"
     }
 

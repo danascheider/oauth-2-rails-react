@@ -3,19 +3,16 @@ const headers = {
   'Access-Control-Allow-Origin': 'http://localhost:4000'
 }
 
-export const getAuthorize = async () => {
+export const getAuthorize = () => {
   const uri = `${baseUri}/authorize`
 
   return fetch(uri, { redirect: 'follow', headers })
 }
 
-export const getCallback = async queryString => {
+export const getCallback = queryString => {
   const uri = `${baseUri}/callback?${queryString}`
 
   return fetch(uri)
-    .then(resp => (
-      resp.json().then(data => ({ status: resp.status, data }))
-    ))
 }
 
 export const getResource = async () => {

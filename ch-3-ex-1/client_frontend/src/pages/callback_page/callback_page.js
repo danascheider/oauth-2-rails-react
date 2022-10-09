@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { getCallback } from '../../utils/api'
 import Nav from '../../components/nav/nav'
@@ -9,19 +9,26 @@ import ErrorContent from '../../components/error_content/error_content'
 const CallbackPage = () => {
   const [queryParams, _setQueryParams] = useSearchParams()
   const [tokenValue, setTokenValue] = useState(null)
-  const [error, setError] = useState(queryParams.error)
+  const [error, setError] = useState(queryParams.get('error'))
+  const mountedRef = useRef(true)
 
   useEffect(() => {
-    if (!error) {
-      const { status, data } = getCallback(queryParams)
-
-      if (status >= 200 && status < 300) {
-        setTokenValue(data.access_token)
-      } else {
-        setError(data.error)
-      }
+    if (mountedRef.current && !tokenValue && !error) {
+      getCallback(queryParams)
+        .then(resp => {
+          resp.json()
+            .then((json) => {
+              if (resp.status >= 200 && resp.status < 300) {
+                setTokenValue(json.access_token)
+              } else {
+                setError(json.error)
+              }
+            })
+        })
     }
-  }, [error, setTokenValue, setError, queryParams])
+
+    return () => mountedRef.current = false
+  }, [error, tokenValue, queryParams])
 
   return(
     <>
