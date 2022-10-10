@@ -24,26 +24,21 @@ class AuthorizationsController < ApplicationController
   }.freeze
 
   def authorize
-    # TODO: Specified as a query string param in the original Express app
     client = Client.find_by(client_id: query_params[:client_id])
 
     if client.nil?
-      # TODO: Specified as a query string param in the original Express app
       Rails.logger.error "Unknown client #{query_params[:client_id]}"
 
       error = "Unknown client #{query_params[:client_id]}"
       render :error, locals: { error: }, status: :unauthorized
-    # TODO: Specified as a query string param in the original Express app
     elsif client.redirect_uris.exclude?(query_params[:redirect_uri])
       Rails.logger.info "Mismatched redirect URIs, expected one of #{client.redirect_uris}, got #{query_params[:redirect_uri]}"
       render 'error', locals: { error: 'Mismatched redirect URI' }, status: :forbidden
     else
-      # TODO: Specified as a query string param in the original Express app
       request_scope = query_params[:scope]&.split(' ')&.sort || []
       client_scope = client.scope
 
       if (request_scope - client_scope).present?
-        # TODO: Specified as a query string param in the original Express app
         url_parsed = URI.parse(CGI.unescape(query_params[:redirect_uri]))
         query = CGI.parse(url_parsed.query || '')
         query['error'] = INVALID_SCOPE
@@ -66,7 +61,6 @@ class AuthorizationsController < ApplicationController
   end
 
   def approve
-    # TODO: Specified as a post body param in the original Express app
     req = Request.find_by(reqid: body_params[:reqid])
 
     if req.nil?
@@ -80,7 +74,6 @@ class AuthorizationsController < ApplicationController
     url_parsed = URI.parse(CGI.unescape(req_attrs['redirect_uri']))
     req_query = CGI.parse(req.query).map {|key, value| value.length == 1 ? [key, value[0]] : [key, value] }.to_h
 
-    # TODO: Specified as a post body param in the original Express app
     if body_params[:approve]
       resp_query = CGI.parse(url_parsed.query || '')
 
@@ -97,7 +90,6 @@ class AuthorizationsController < ApplicationController
         # TODO: What if the client is not found?
         # TODO: What if the client does not match the client ID in the req_attributes?
 
-        # TODO: Specified as post body params in the original Express app
         request_scope = body_params
                           .keys
                           .map(&:to_s)
