@@ -34,9 +34,9 @@ class ResourcesController < ApplicationController
 
     @token = if auth_header && auth_header.start_with?(/bearer /i)
                 auth_header.gsub(/bearer /i, '')
-              # TODO: In the original Express app, it first checks post body params and
-              #       then query params - not sure if it's really necessary to differentiate
-              #       here.
+              # In the original Express app, it first checks post body params and
+              # then query params - since all either does is assign the value to this
+              # instance variable, I don't think it matters to differentiate here
               elsif params[:access_token]
                 params[:access_token]
               end
