@@ -25,28 +25,26 @@ class AuthorizationsController < ApplicationController
 
   def authorize
     # TODO: Specified as a query string param in the original Express app
-    client = Client.find_by(client_id: params[:client_id])
+    client = Client.find_by(client_id: query_params[:client_id])
 
     if client.nil?
       # TODO: Specified as a query string param in the original Express app
-      Rails.logger.error "Unknown client #{params[:client_id]}"
+      Rails.logger.error "Unknown client #{query_params[:client_id]}"
 
-      error = "Unknown client #{params[:client_id]}"
+      error = "Unknown client #{query_params[:client_id]}"
       render :error, locals: { error: }, status: :unauthorized
     # TODO: Specified as a query string param in the original Express app
-    elsif client.redirect_uris.exclude?(params[:redirect_uri])
-      Rails.logger.info "Mismatched redirect URIs, expected one of #{@client.redirect_uris}, got #{params[:redirect_uri]}"
-
-      error = 'Mismatched redirect URI'
-      render 'error', locals: { error: }, status: :forbidden
+    elsif client.redirect_uris.exclude?(query_params[:redirect_uri])
+      Rails.logger.info "Mismatched redirect URIs, expected one of #{client.redirect_uris}, got #{query_params[:redirect_uri]}"
+      render 'error', locals: { error: 'Mismatched redirect URI' }, status: :forbidden
     else
       # TODO: Specified as a query string param in the original Express app
-      request_scope = params[:scope]&.split(' ')&.sort || []
+      request_scope = query_params[:scope]&.split(' ')&.sort || []
       client_scope = client.scope
 
       if (request_scope - client_scope).present?
         # TODO: Specified as a query string param in the original Express app
-        url_parsed = URI.parse(CGI.unescape(params[:redirect_uri]))
+        url_parsed = URI.parse(CGI.unescape(query_params[:redirect_uri]))
         query = CGI.parse(url_parsed.query || '')
         query['error'] = INVALID_SCOPE
         url_parsed.query = URI.encode_www_form(query)
@@ -60,7 +58,7 @@ class AuthorizationsController < ApplicationController
               query: URI.encode_www_form(request.query_parameters),
               scope: request_scope,
               # TODO: Specified as a query string param in the original Express app
-              redirect_uri: params[:redirect_uri]
+              redirect_uri: query_params[:redirect_uri]
             )
 
       render 'approve', locals: { client:, request: req, request_scope: }, status: :ok
@@ -69,7 +67,7 @@ class AuthorizationsController < ApplicationController
 
   def approve
     # TODO: Specified as a post body param in the original Express app
-    req = Request.find_by(reqid: params[:reqid])
+    req = Request.find_by(reqid: body_params[:reqid])
 
     if req.nil?
       render 'error', locals: { error: 'No matching authorization request.' }, status: :forbidden
@@ -83,11 +81,16 @@ class AuthorizationsController < ApplicationController
     req_query = CGI.parse(req.query).map {|key, value| value.length == 1 ? [key, value[0]] : [key, value] }.to_h
 
     # TODO: Specified as a post body param in the original Express app
-    if params[:approve]
+    if body_params[:approve]
       resp_query = CGI.parse(url_parsed.query || '')
 
       if req_query['response_type'] == 'code'
         code = SecureRandom.hex(8)
+
+        # TODO: The client in this system never actually passes this param so
+        #       not sure what the authors' endgame was here and I'm also not
+        #       sure if this is supposed to be a query param or a body param
+        #       or whether that matters in this case.
         user = params[:user]
         client = Client.find_by(client_id: req_query['client_id'])
 
@@ -95,9 +98,9 @@ class AuthorizationsController < ApplicationController
         # TODO: What if the client does not match the client ID in the req_attributes?
 
         # TODO: Specified as post body params in the original Express app
-        request_scope = params
+        request_scope = body_params
                           .keys
-                          .map(&:to_s) # TODO: is this necessary with ActionController::Parameters?
+                          .map(&:to_s)
                           .filter_map {|key| key.gsub('scope_', '') if key.start_with?('scope_') }
         client_scope = client&.scope || []
 
@@ -161,7 +164,7 @@ class AuthorizationsController < ApplicationController
     #       I believe the book said query params are also allowed. Should we check for a query
     #       param separately or handle the case where it is a query param differently?
     if params[:client_id].present?
-      if defined?(client_id)
+      if client_id.present?
         Rails.logger.error 'Client attempted to authenticate by multiple methods.'
         render json: { error: INVALID_CLIENT }, status: :unauthorized
         return
@@ -171,8 +174,6 @@ class AuthorizationsController < ApplicationController
       # TODO: This is presumably the same type of param (post body/query string) as the client ID?
       client_secret = params[:client_secret]
     end
-
-    # TODO: What if client_id is still undefined or nil?
 
     client = Client.find_by(client_id:)
 
@@ -190,11 +191,10 @@ class AuthorizationsController < ApplicationController
     end
 
     # TODO: Specified as a post body param in the original Express app
-    if params[:grant_type] == GRANT_TYPES[:authorization_code]
-      Rails.logger.debug "Grant type: 'authorization_code', authorization code '#{params[:code]}'"
+    if body_params[:grant_type] == GRANT_TYPES[:authorization_code]
 
       # TODO: Specified as a post body param in the original Express app
-      code = AuthorizationCode.find_by(code: params[:code])
+      code = AuthorizationCode.find_by(code: body_params[:code])
 
       if code.present?
         code_attrs = code.attributes
@@ -228,12 +228,12 @@ class AuthorizationsController < ApplicationController
         end
       else
         # TODO: Specified as a post body param in the original Express app
-        Rails.logger.error "Unknown code #{params[:code]}"
+        Rails.logger.error "Unknown code #{body_params[:code]}"
         render json: { error: INVALID_GRANT }, status: :bad_request
       end
     else
       # TODO: Specified as a post body param in the original Express app
-      Rails.logger.error "Unknown grant type #{params[:grant_type]}"
+      Rails.logger.error "Unknown grant type #{body_params[:grant_type]}"
       render json: { error: UNSUPPORTED_GRANT_TYPE }, status: :bad_request
     end
   end

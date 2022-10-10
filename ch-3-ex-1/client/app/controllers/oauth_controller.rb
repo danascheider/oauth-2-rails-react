@@ -25,17 +25,17 @@ class OauthController < ApplicationController
 
   def callback
     # TODO: Front end should send query to back end with its params and status
-    corresponding_request = AuthorizationRequest.find_by(state: params[:state])
+    corresponding_request = AuthorizationRequest.find_by(state: query_params[:state])
 
     if corresponding_request.nil?
-      Rails.logger.error "No corresponding request found for state '#{params[:state]}'"
+      Rails.logger.error "No corresponding request found for state '#{query_params[:state]}'"
       render json: { error: 'State value did not match' }, status: :bad_request
       return
     end
 
     query_string = {
       grant_type: 'authorization_code',
-      code: params[:code],
+      code: query_params[:code],
       redirect_uri: configatron.oauth.client.redirect_uris[0]
     }
 
@@ -44,7 +44,7 @@ class OauthController < ApplicationController
       'Authorization' => "Bearer #{client_bearer_token}"
     }
 
-    Rails.logger.info "Requesting access for code '#{params[:code]}'"
+    Rails.logger.info "Requesting access for code '#{query_params[:code]}'"
     token_response = Faraday.post(
                                    configatron.oauth.auth_server.token_endpoint,
                                    URI.encode_www_form(query_string),
