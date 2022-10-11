@@ -16,7 +16,7 @@ class OauthController < ApplicationController
 
     uri = URI.parse(configatron.oauth.auth_server.authorization_endpoint)
     query = CGI.parse(uri.query || '').merge(data)
-    uri.query = URI.encode_www_form(data)
+    uri.query = URI.encode_www_form(query)
 
     AuthorizationRequest.create!(data.except(:client_id, :scope))
 
