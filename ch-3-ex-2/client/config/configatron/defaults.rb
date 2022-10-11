@@ -3,6 +3,7 @@ configatron.oauth do |oauth|
     client.client_id = 'oauth-client-1'
     client.client_secret = 'oauth-client-secret-1'
     client.redirect_uris = ['http://localhost:4000/callback']
+    client.scope = 'foo'
   end
 
   oauth.auth_server do |auth_server|
