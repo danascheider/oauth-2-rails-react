@@ -1,0 +1,46 @@
+import { useNavigate } from 'react-router-dom'
+import { getAuthorize } from '../../utils/api'
+import paths from '../../routing/paths'
+import ButtonLink from '../button_link/button_link'
+import Label from '../label/label'
+import styles from './home_page_content.module.css'
+
+const HomePageContent = ({ accessToken = 'NONE', refreshToken = 'NONE', scope = 'NONE' }) => {
+  const navigate = useNavigate()
+
+  const authorize = e => {
+    e.preventDefault()
+
+    getAuthorize()
+      .then(resp => {
+        window.location.href = resp.url
+      })
+  }
+
+  return(
+    <>
+      <p className={styles.text}>
+        Access token value:&nbsp;
+        <Label color='red'>{accessToken}</Label>
+      </p>
+      <p className={styles.text}>
+        Scope:&nbsp;
+        <Label color='red'>{scope}</Label>
+      </p>
+      <p className={styles.text}>
+        Refresh token value:&nbsp;
+        <Label color='red'>{refreshToken}</Label>
+      </p>
+      <div className={styles.buttons}>
+        <span className={styles.buttonLeft}>
+          <ButtonLink text='Get OAuth Token' onClick={authorize} />
+        </span>
+        <span>
+          <ButtonLink text='Fetch Protected Resource' onClick={() => navigate(paths.resource)} />
+        </span>
+      </div>
+    </>
+  )
+}
+
+export default HomePageContent
