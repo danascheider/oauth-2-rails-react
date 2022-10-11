@@ -25,7 +25,7 @@ const HomePageContent = ({ tokenValue = 'NONE' }) => {
           <Label color='red'>{tokenValue}</Label> :
           <code className={styles.code}>{tokenValue}</code>}
       </p>
-      <div className={styles.buttons}>
+      <div>
         <span className={styles.buttonLeft}>
           <ButtonLink text='Get OAuth Token' onClick={authorize} />
         </span>
