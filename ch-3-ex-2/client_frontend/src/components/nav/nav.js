@@ -6,8 +6,8 @@ const Nav = () => (
     <nav className={styles.nav}>
       <h1 className={styles.title}>
         <a className={styles.link} href='/'>OAuth in Action:</a>
-        <Label color='blue'>OAuth Client</Label>
       </h1>
+      <span className={styles.label}><Label color='blue'>OAuth Client</Label></span>
     </nav>
   </header>
 )
