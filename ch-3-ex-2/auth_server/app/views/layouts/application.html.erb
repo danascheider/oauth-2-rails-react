@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>AuthServer</title>
+    <title>OAuth in Action</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -10,6 +10,11 @@
   </head>
 
   <body>
-    <%= yield %>
+    <%= render 'layouts/top_nav' %>
+    <main id='pageContent'>
+      <div class='container'>
+        <%= yield %>
+      </div>
+    </main>
   </body>
 </html>
