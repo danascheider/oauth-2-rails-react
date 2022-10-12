@@ -2,5 +2,8 @@
 
 Rails.application.routes.draw do
   root 'base#index'
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+
+  get 'authorize', to: 'authorizations#authorize'
+  post 'approve', to: 'authorizations#approve'
+  post 'token', to: 'authorizations#token'
 end
