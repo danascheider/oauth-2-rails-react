@@ -44,7 +44,7 @@ class AuthorizationsController < ApplicationController
         query['error'] = INVALID_SCOPE
         url_parsed.query = URI.encode_www_form(query)
 
-        redirect_to url_parsed, status: :forbidden
+        redirect_to url_parsed, status: :found
       end
 
       req = Request.create!(
@@ -52,7 +52,6 @@ class AuthorizationsController < ApplicationController
               reqid: SecureRandom.hex(8),
               query: URI.encode_www_form(request.query_parameters),
               scope: request_scope,
-              # TODO: Specified as a query string param in the original Express app
               redirect_uri: query_params[:redirect_uri]
             )
 
