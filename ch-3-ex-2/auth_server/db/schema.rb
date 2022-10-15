@@ -10,9 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_11_212221) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_14_224010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "authorization_codes", force: :cascade do |t|
+    t.string "code", null: false
+    t.json "authorization_endpoint_request"
+    t.string "scope", default: [], null: false, array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_authorization_codes_on_code", unique: true
+  end
 
   create_table "clients", force: :cascade do |t|
     t.string "client_id", null: false
