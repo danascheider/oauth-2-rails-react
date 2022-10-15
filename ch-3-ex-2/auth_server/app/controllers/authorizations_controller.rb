@@ -21,20 +21,18 @@ class AuthorizationsController < ApplicationController
 
       render 'error', locals: { error: INVALID_REDIRECT_URI }
     else
-      request_scope = query_params[:scope]&.split(' ') || []
+      req_scope = query_params[:scope]&.split(' ') || []
 
-      if (request_scope - client.scope).present?
-        url_parsed = URI.parse(query_params[:redirect_uri])
-        query = CGI.parse(url_parsed.query || '')
-        query[:error] = INVALID_SCOPE
+      disallowed_scopes = req_scope - client.scope
 
-        url_parsed.query = URI.encode_www_form(query)
+      if disallowed_scopes.present?
+        Rails.logger.error "Invalid scope(s) requested: #{disallowed_scopes.join(', ')}"
 
-        redirect_to url_parsed.to_s, status: :found
+        render 'error', locals: { error: "Invalid scope(s) requested: #{disallowed_scopes.join(', ')}" }
         return
       end
 
-      req = Request.create!(
+      @req = Request.create!(
         client:,
         reqid: SecureRandom.hex(8),
         query: URI.encode_www_form(request.query_parameters),
@@ -42,7 +40,7 @@ class AuthorizationsController < ApplicationController
         redirect_uri: query_params[:redirect_uri]
       )
 
-      render 'authorize', locals: { client:, request: req, request_scope: }, status: :ok
+      render 'authorize', locals: { client:, req_scope: }, status: :ok
     end
   end
 
@@ -61,12 +59,12 @@ class AuthorizationsController < ApplicationController
       else
         Rails.logger.error "Invalid response type #{req.query_hash['response_type']}"
 
-        destroy_request_model_and_redirect(unsupported_response_type_uri(query_string).to_s)
+        destroy_request_model_and_redirect(unsupported_response_type_uri(query_string))
       end
     else
       Rails.logger.error "Access denied for client #{req.client_id}"
 
-      destroy_request_model_and_redirect(access_denied_uri(query_string).to_s)
+      destroy_request_model_and_redirect(access_denied_uri(query_string))
     end
   end
 
@@ -104,15 +102,15 @@ class AuthorizationsController < ApplicationController
   end
 
   def invalid_scope_uri(existing_query = {})
-    build_redirect_uri(INVALID_SCOPE, existing_query)
+    build_redirect_uri(INVALID_SCOPE, existing_query).to_s
   end
 
   def unsupported_response_type_uri(existing_query = {})
-    build_redirect_uri(UNSUPPORTED_RESPONSE_TYPE, existing_query)
+    build_redirect_uri(UNSUPPORTED_RESPONSE_TYPE, existing_query).to_s
   end
 
   def access_denied_uri(existing_query = {})
-    build_redirect_uri(ACCESS_DENIED, existing_query)
+    build_redirect_uri(ACCESS_DENIED, existing_query).to_s
   end
 
   def destroy_request_model_and_redirect(uri)
@@ -136,7 +134,7 @@ class AuthorizationsController < ApplicationController
     if disallowed_scopes.present?
       Rails.logger.error "Invalid scope(s) requested: #{disallowed_scopes.join(', ')}"
 
-      return invalid_scope_uri(query_string).to_s
+      return invalid_scope_uri(query_string)
     end
 
     code = SecureRandom.hex(8)
