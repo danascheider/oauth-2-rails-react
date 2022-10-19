@@ -7,8 +7,11 @@ require 'securerandom'
 class AuthorizationsController < ApplicationController
   UNKNOWN_CLIENT = 'Unknown client'
   INVALID_REDIRECT_URI = 'Invalid redirect URI'
+  INVALID_CLIENT = 'invalid_client'
+  INVALID_GRANT = 'invalid_grant'
   INVALID_SCOPE = 'invalid_scope'
-  UNSUPPORTED_RESPONSE_TYPE = 'unsupported response_type'
+  UNSUPPORTED_RESPONSE_TYPE = 'unsupported_response_type'
+  UNSUPPORTED_GRANT_TYPE = 'unsupported_grant_type'
   ACCESS_DENIED = 'access_denied'
 
   def authorize
@@ -69,6 +72,70 @@ class AuthorizationsController < ApplicationController
   end
 
   def token
+    client_id, client_secret = identify_client_for_token_request
+
+    if body_params[:grant_type] == 'authorization_code'
+      code = AuthorizationCode.find_by(code: body_params[:code])
+
+      if code.present?
+        if code.authorization_endpoint_request[:client_id] == client_id
+          access_token = SecureRandom.hex(32)
+
+          cscope = code.scope.join(' ')
+          AccessToken.create!(token: access_token, client_id:, scope: cscope)
+
+          refresh_token = RefreshToken.find_by(client_id:)
+
+          if refresh_token.nil?
+            refresh_token = SecureRandom.hex(16)
+            RefreshToken.create!(token: refresh_token, client_id:, scope: cscope)
+          else
+            refresh_token = refresh_token.token
+          end
+
+          code.destroy!
+
+          Rails.logger.info "Issued access token for code #{body_params[:code]}"
+          render json: { access_token:, refresh_token:, token_type: 'Bearer', scope: cscope }, status: :ok
+        else
+          Rails.logger.error "Client mismatch: expected #{code.authorization_endpoint_request[:client_id]}, got #{client_id}"
+
+          render json: { error: INVALID_GRANT }, status: :bad_request
+        end
+      else
+        Rails.logger.error "No authorization code model matching code '#{body_params[:code]}'"
+
+        render json: { error: INVALID_GRANT }, status: :bad_request
+        return
+      end
+    elsif body_params[:grant_type] == 'refresh_token'
+      refresh_token = RefreshToken.find_by(token: body_params[:refresh_token])
+
+      if refresh_token.nil?
+        Rails.logger.error "No refresh token matches '#{body_params[:refresh_token]}'"
+        head :unauthorized
+        return
+      end
+
+      if refresh_token.client_id != client_id
+        Rails.logger.error "Invalid client using a refresh token, expected '#{refresh_token.client_id}', got '#{client_id}'"
+        refresh_token.destroy!
+
+        head :bad_request
+        return
+      end
+
+      Rails.logger.info "We found a matching refresh token: '#{body_params[:refresh_token]}'"
+      access_token = SecureRandom.hex(32)
+      scope = refresh_token.scope
+      AccessToken.create!(client:, token: access_token, scope:)
+
+      Rails.logger.info "Issuing access token '#{access_token}' for refresh token '#{body_params[:refresh_token]}'"
+      render json: { access_token:, token_type: 'Bearer', refresh_token: body_params[:refresh_token] }, status: :ok
+    else
+      Rails.logger.error "Unknown grant type '#{body_params[:grant_type]}'"
+      render json: { error: UNSUPPORTED_GRANT_TYPE }, status: :bad_request
+    end
   end
 
   private
@@ -77,8 +144,8 @@ class AuthorizationsController < ApplicationController
     @req ||= Request.find_by(reqid: body_params[:reqid])
   end
 
-  def client
-    @client ||= req.present? ? req.client : Client.find_by(client_id: query_params[:client_id])
+  def client(client_id = nil)
+    @client ||= client_id.nil? ? req&.client : Client.find_by(client_id:)
   end
 
   def request_scope
@@ -113,11 +180,52 @@ class AuthorizationsController < ApplicationController
     build_redirect_uri(ACCESS_DENIED, existing_query).to_s
   end
 
+  def credentials_from_authorization_header
+    return nil if request.headers.['Authorization'].blank?
+
+    Base64
+      .decode64(request.headers['Authorization'].gsub(/bearer /i, ''))
+      .split(':')
+      .map {|string| CGI.unescape(string) }
+  end
+
   def destroy_request_model_and_redirect(uri)
     Rails.logger.debug "Destroying request reqid #{req.reqid}"
     req.destroy!
 
     redirect_to uri, status: :found
+  end
+
+  def identify_client_for_token_request
+    client_id, client_secret = credentials_from_authorization_header
+
+    if body_params[:client_id]
+      if client_id.present?
+        Rails.logger.error 'Client attempted to authenticate with multiple methods'
+
+        render json: { error: INVALID_CLIENT }, status: :unauthorized
+        return
+      end
+
+      client_id = body_params[:client_id]
+      client_secret = body_params[:client_secret]
+    end
+
+    if client(client_id).nil?
+      Rails.logger.error "Unknown client #{client_id}"
+
+      render json: { error: INVALID_CLIENT }, status: :unauthorized
+      return
+    end
+
+    if client_secret != client.client_secret
+      Rails.logger.error "Mismatched client secret: expected '#{client.client_secret}', got '#{client_secret}'"
+
+      render json: { error: INVALID_CLIENT }, status: :unauthorized
+      return
+    end
+
+    [client_id, client_secret]
   end
 
   def code_response_uri

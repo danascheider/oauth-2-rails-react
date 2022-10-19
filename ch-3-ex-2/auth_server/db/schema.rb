@@ -10,9 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_14_224010) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_18_192734) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "access_tokens", force: :cascade do |t|
+    t.string "client_id", null: false
+    t.string "token", null: false
+    t.string "scope", default: "", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_access_tokens_on_client_id"
+    t.index ["token"], name: "index_access_tokens_on_token", unique: true
+  end
 
   create_table "authorization_codes", force: :cascade do |t|
     t.string "code", null: false
@@ -33,6 +44,16 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_14_224010) do
     t.index ["client_id"], name: "index_clients_on_client_id", unique: true
   end
 
+  create_table "refresh_tokens", force: :cascade do |t|
+    t.string "client_id", null: false
+    t.string "token"
+    t.string "scope", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_refresh_tokens_on_client_id"
+    t.index ["token"], name: "index_refresh_tokens_on_token", unique: true
+  end
+
   create_table "requests", force: :cascade do |t|
     t.string "client_id", null: false
     t.string "reqid", null: false
@@ -45,5 +66,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_14_224010) do
     t.index ["reqid"], name: "index_requests_on_reqid", unique: true
   end
 
+  add_foreign_key "access_tokens", "clients", primary_key: "client_id"
+  add_foreign_key "refresh_tokens", "clients", primary_key: "client_id"
   add_foreign_key "requests", "clients", primary_key: "client_id"
 end
