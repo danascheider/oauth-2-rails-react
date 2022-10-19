@@ -41,7 +41,7 @@ class OauthController < ApplicationController
 
     headers = {
       'Content-Type' => 'application/x-www-form-urlencoded',
-      'Authorization' => "Bearer #{client_bearer_token}"
+      'Authorization' => "Basic #{client_credentials}"
     }
 
     Rails.logger.info "Requesting access for code '#{query_params[:code]}'"
@@ -70,7 +70,7 @@ class OauthController < ApplicationController
 
   private
 
-  def client_bearer_token
+  def client_credentials
     client_id = CGI.escape(configatron.oauth.client.client_id)
     client_secret = CGI.escape(configatron.oauth.client.client_secret)
 

@@ -143,7 +143,7 @@ class AuthorizationsController < ApplicationController
 
     if auth.present?
       client_credentials = Base64
-                             .decode64(auth.gsub(/bearer /i, ''))
+                             .decode64(auth.gsub(/basic /i, ''))
                              .split(':')
                              .map {|string| CGI.unescape(string) }
 
