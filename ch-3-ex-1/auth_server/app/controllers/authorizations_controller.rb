@@ -67,11 +67,12 @@ class AuthorizationsController < ApplicationController
       return
     end
 
+    client = req.client
     req_attrs = req.attributes
     req.destroy!
 
     url_parsed = URI.parse(CGI.unescape(req_attrs['redirect_uri']))
-    req_query = CGI.parse(req.query).map {|key, value| value.length == 1 ? [key, value[0]] : [key, value] }.to_h
+    req_query = CGI.parse(req_attrs['query']).map {|key, value| value.length == 1 ? [key, value[0]] : [key, value] }.to_h
 
     if body_params[:approve]
       resp_query = CGI.parse(url_parsed.query || '')
