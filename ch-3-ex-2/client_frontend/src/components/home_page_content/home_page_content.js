@@ -5,7 +5,7 @@ import ButtonLink from '../button_link/button_link'
 import Label from '../label/label'
 import styles from './home_page_content.module.css'
 
-const HomePageContent = ({ accessToken = 'NONE', refreshToken = 'NONE', scope = 'NONE' }) => {
+const HomePageContent = ({ accessToken, refreshToken, scope }) => {
   const navigate = useNavigate()
 
   const authorize = e => {
@@ -21,15 +21,15 @@ const HomePageContent = ({ accessToken = 'NONE', refreshToken = 'NONE', scope = 
     <>
       <p className={styles.text}>
         Access token value:&nbsp;
-        <Label color='red'>{accessToken}</Label>
+        <Label color='red'>{accessToken || 'NONE'}</Label>
       </p>
       <p className={styles.text}>
         Scope:&nbsp;
-        <Label color='red'>{scope}</Label>
+        <Label color='red'>{scope || 'NONE'}</Label>
       </p>
       <p className={styles.text}>
         Refresh token value:&nbsp;
-        <Label color='red'>{refreshToken}</Label>
+        <Label color='red'>{refreshToken || 'NONE'}</Label>
       </p>
       <div className={styles.buttons}>
         <span className={styles.buttonLeft}>

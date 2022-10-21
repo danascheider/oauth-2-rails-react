@@ -24,5 +24,60 @@ class OauthController < ApplicationController
   end
 
   def callback
+    if query_params[:error]
+      render json: { error: }, status: :forbidden
+      return
+    end
+
+    auth_request = AuthorizationRequest.find_by(state: query_params[:state])
+
+    if auth_request.nil?
+      Rails.logger.error "State '#{query_params[:state]}' DOES NOT MATCH any existing authorization request."
+      render json: { error: 'State value did not match' }, status: :bad_request
+      return
+    end
+
+    form_data = {
+      grant_type: 'authorization_code',
+      code: query_params[:code],
+      redirect_uri: configatron.oauth.client.redirect_uris.first
+    }
+
+    headers = {
+      'Content-Type' => 'application/x-www-form-urlencoded',
+      'Authorization' => "Basic #{client_credentials}"
+    }
+
+    Rails.logger.info "Requesting access for code '#{query_params[:code]}'"
+    token_response = Faraday.post(
+                                   configatron.oauth.auth_server.token_endpoint,
+                                   URI.encode_www_form(form_data),
+                                   headers
+                                 )
+
+    if token_response.success?
+      body = JSON.parse(token_response.body, symbolize_names: true)
+
+      access_token = body[:access_token]
+
+      refresh_token = body[:refresh_token]
+      Rails.logger.info "Got refresh token: '#{refresh_token}'" if refresh_token.present?
+
+      scope = body[:scope]
+      Rails.logger.info "Got scope: '#{scope}'"
+
+      render json: { access_token:, refresh_token:, scope: }, status: :ok
+    else
+      render json: { error: "Unable to fetch token, server response: #{token_response.status}" }, status: token_response.status
+    end
+  end
+
+  private
+
+  def client_credentials
+    client_id = CGI.escape(configatron.oauth.client.client_id)
+    client_secret = CGI.escape(configatron.oauth.client.client_secret)
+
+    Base64.encode64("#{client_id}:#{client_secret}")
   end
 end

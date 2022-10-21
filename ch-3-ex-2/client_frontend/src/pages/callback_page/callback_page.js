@@ -10,6 +10,7 @@ const CallbackPage = () => {
   const [queryParams, _setQueryParams] = useSearchParams()
   const [accessToken, setAccessToken] = useState(null)
   const [refreshToken, setRefreshToken] = useState(null)
+  const [scope, setScope] = useState(null)
   const [error, setError] = useState(queryParams.get('error'))
   const mountedRef = useRef(true)
 
@@ -21,7 +22,8 @@ const CallbackPage = () => {
             .then((json) => {
               if (resp.status >= 200 && resp.status < 300) {
                 setAccessToken(json.access_token)
-                setRefreshToken(json.refreshToken)
+                setRefreshToken(json.refresh_token)
+                setScope(json.scope)
               } else {
                 setError(json.error)
               }
@@ -37,7 +39,7 @@ const CallbackPage = () => {
       <Nav />
       <PageBody>
         {error ? <ErrorContent error={error} /> :
-          <HomePageContent accessToken={accessToken || 'NONE'} refreshToken={refreshToken || 'NONE'} />}
+          <HomePageContent accessToken={accessToken} refreshToken={refreshToken} scope={scope} />}
       </PageBody>
     </>
   )
