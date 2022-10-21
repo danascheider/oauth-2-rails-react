@@ -66,18 +66,11 @@ class OauthController < ApplicationController
       scope = body[:scope]
       Rails.logger.info "Got scope: '#{scope}'"
 
+      AccessToken.create!(access_token:, refresh_token:, token_type: body[:token_type], scope: scope.split(' '))
+
       render json: { access_token:, refresh_token:, scope: }, status: :ok
     else
       render json: { error: "Unable to fetch token, server response: #{token_response.status}" }, status: token_response.status
     end
-  end
-
-  private
-
-  def client_credentials
-    client_id = CGI.escape(configatron.oauth.client.client_id)
-    client_secret = CGI.escape(configatron.oauth.client.client_secret)
-
-    Base64.encode64("#{client_id}:#{client_secret}")
   end
 end
