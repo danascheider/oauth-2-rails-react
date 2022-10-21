@@ -17,7 +17,7 @@ module Seeds
     AccessToken.create!(
       client:,
       token: '591aa348f82c1d036549c0c88a514e295a80304c30bf9e3993bb6662f693c515',
-      scope: 'foo bar'
+      scope: 'foo bar',
       expires_at: 1.minute.ago
     )
 

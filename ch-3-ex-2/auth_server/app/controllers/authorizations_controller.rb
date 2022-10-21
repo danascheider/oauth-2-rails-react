@@ -5,6 +5,8 @@ require 'cgi'
 require 'securerandom'
 
 class AuthorizationsController < ApplicationController
+  skip_forgery_protection except: :authorize
+
   UNKNOWN_CLIENT = 'Unknown client'
   INVALID_REDIRECT_URI = 'Invalid redirect URI'
   INVALID_CLIENT = 'invalid_client'
@@ -15,6 +17,8 @@ class AuthorizationsController < ApplicationController
   ACCESS_DENIED = 'access_denied'
 
   def authorize
+    @client_id = query_params[:client_id]
+
     if client.nil?
       Rails.logger.error "Unknown client #{query_params[:client_id]}"
 
@@ -72,13 +76,13 @@ class AuthorizationsController < ApplicationController
   end
 
   def token
-    client_id, client_secret = identify_client_for_token_request
+    identify_client_for_token_request
 
     if body_params[:grant_type] == 'authorization_code'
       code = AuthorizationCode.find_by(code: body_params[:code])
 
       if code.present?
-        if code.authorization_endpoint_request[:client_id] == client_id
+        if code.authorization_endpoint_request['client_id'] == client_id
           access_token = SecureRandom.hex(32)
 
           cscope = code.scope.join(' ')
@@ -96,9 +100,10 @@ class AuthorizationsController < ApplicationController
           code.destroy!
 
           Rails.logger.info "Issued access token for code #{body_params[:code]}"
+
           render json: { access_token:, refresh_token:, token_type: 'Bearer', scope: cscope }, status: :ok
         else
-          Rails.logger.error "Client mismatch: expected #{code.authorization_endpoint_request[:client_id]}, got #{client_id}"
+          Rails.logger.error "Client mismatch: expected #{code.authorization_endpoint_request['client_id']}, got #{client_id}"
 
           render json: { error: INVALID_GRANT }, status: :bad_request
         end
@@ -140,12 +145,14 @@ class AuthorizationsController < ApplicationController
 
   private
 
+  attr_reader :client_id
+
   def req
     @req ||= Request.find_by(reqid: body_params[:reqid])
   end
 
-  def client(client_id = nil)
-    @client ||= client_id.nil? ? req&.client : Client.find_by(client_id:)
+  def client
+    @client ||= req.present? ? req&.client : Client.find_by(client_id:)
   end
 
   def request_scope
@@ -181,23 +188,22 @@ class AuthorizationsController < ApplicationController
   end
 
   def credentials_from_authorization_header
-    return nil if request.headers.['Authorization'].blank?
+    return nil if request.headers['Authorization'].blank?
 
     Base64
-      .decode64(request.headers['Authorization'].gsub(/bearer /i, ''))
+      .decode64(request.headers['Authorization'].gsub(/basic /i, ''))
       .split(':')
       .map {|string| CGI.unescape(string) }
   end
 
   def destroy_request_model_and_redirect(uri)
-    Rails.logger.debug "Destroying request reqid #{req.reqid}"
     req.destroy!
 
     redirect_to uri, status: :found
   end
 
   def identify_client_for_token_request
-    client_id, client_secret = credentials_from_authorization_header
+    @client_id, client_secret = credentials_from_authorization_header
 
     if body_params[:client_id]
       if client_id.present?
@@ -207,11 +213,11 @@ class AuthorizationsController < ApplicationController
         return
       end
 
-      client_id = body_params[:client_id]
+      @client_id = body_params[:client_id]
       client_secret = body_params[:client_secret]
     end
 
-    if client(client_id).nil?
+    if client.nil?
       Rails.logger.error "Unknown client #{client_id}"
 
       render json: { error: INVALID_CLIENT }, status: :unauthorized
@@ -224,8 +230,6 @@ class AuthorizationsController < ApplicationController
       render json: { error: INVALID_CLIENT }, status: :unauthorized
       return
     end
-
-    [client_id, client_secret]
   end
 
   def code_response_uri
@@ -248,7 +252,6 @@ class AuthorizationsController < ApplicationController
     code = SecureRandom.hex(8)
 
     AuthorizationCode.create!(code:, authorization_endpoint_request: req.attributes, scope: request_scope)
-    Rails.logger.debug "Authorization code created with code #{code}"
 
     query_string['code'] = code
     query_string['state'] = req.query_hash['state']

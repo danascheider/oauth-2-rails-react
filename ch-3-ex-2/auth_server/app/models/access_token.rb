@@ -9,7 +9,7 @@ class AccessToken < ApplicationRecord
   validates :scope, presence: true, unless: :scope_is_empty_string?
   validates :expires_at, presence: true
 
-  before_create :set_default_expiration, if: ->{ expires_at.blank? }
+  before_validation :set_default_expiration, on: :create, if: ->{ expires_at.blank? }
 
   private
 
