@@ -12,7 +12,6 @@
   <li>
     <strong>redirect_uris:</strong>
     <% client.redirect_uris.each_with_index do |uri, index| %>
-      <code><%= uri %></code>
       <% if index == client.redirect_uris.length - 1 %>
         <code><%= uri %></code>
       <% else %>
