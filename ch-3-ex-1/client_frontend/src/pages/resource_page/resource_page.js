@@ -27,11 +27,11 @@ const ResourcePage = () => {
             [
             <ul className={styles.resourceList}>
               {resource.map(element => (
-                <li className={styles.listItem}>
+                <li className={styles.listItem} key={element.name}>
                   &emsp;&emsp;&#123;
                   <ul className={styles.attributes}>
-                    <li className={styles.itemText}>&emsp;&emsp;&emsp;&emsp;"name": "{element.name}",</li>
-                    <li className={styles.itemText}>&emsp;&emsp;&emsp;&emsp;"description": "{element.description}"</li>
+                    <li className={styles.itemText} key='name'>&emsp;&emsp;&emsp;&emsp;"name": "{element.name}",</li>
+                    <li className={styles.itemText} key='description'>&emsp;&emsp;&emsp;&emsp;"description": "{element.description}"</li>
                   </ul>
                   &emsp;&emsp;&#125;{element === resource[resource.length - 1] ? '' : ','}
                 </li>
