@@ -6,12 +6,19 @@ require 'cgi'
 
 class OauthController < ApplicationController
   def authorize
+    redirect_uri =
+      if query_params[:redirect_page] == 'resource'
+        configatron.oauth.client.redirect_uris[:resource]
+      else
+        configatron.oauth.client.redirect_uris[:callback]
+      end
+
     data = {
       state: SecureRandom.hex(8),
       response_type: 'code',
       client_id: configatron.oauth.client.client_id,
       scope: 'foo',
-      redirect_uri: configatron.oauth.client.redirect_uris[0]
+      redirect_uri:
     }
 
     uri = URI.parse(configatron.oauth.auth_server.authorization_endpoint)
@@ -36,7 +43,7 @@ class OauthController < ApplicationController
     query_string = {
       grant_type: 'authorization_code',
       code: query_params[:code],
-      redirect_uri: configatron.oauth.client.redirect_uris[0]
+      redirect_uri: corresponding_request.redirect_uri
     }
 
     headers = {

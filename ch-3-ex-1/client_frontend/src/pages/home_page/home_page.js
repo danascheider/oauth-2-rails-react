@@ -33,7 +33,7 @@ const HomePage = () => {
       <Nav />
       <PageBody>
         {error ? <ErrorContent error={error} /> :
-          <HomePageContent tokenValue={tokenValue || 'NONE'} />}
+          <HomePageContent tokenValue={tokenValue} />}
       </PageBody>
     </>
   )

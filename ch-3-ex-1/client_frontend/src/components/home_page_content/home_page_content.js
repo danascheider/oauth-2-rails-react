@@ -8,10 +8,16 @@ import styles from './home_page_content.module.css'
 const HomePageContent = ({ tokenValue }) => {
   const navigate = useNavigate()
 
-  const authorize = e => {
+  const goToResource = e => {
     e.preventDefault()
 
-    getAuthorize()
+    navigate(paths.resource)
+  }
+
+  const authorize = (e, redirectPage = 'callback') => {
+    e.preventDefault()
+
+    getAuthorize(redirectPage)
       .then(resp => {
         window.location.href = resp.url
       })
@@ -21,16 +27,15 @@ const HomePageContent = ({ tokenValue }) => {
     <>
       <p className={styles.text}>
         Access token value:&nbsp;
-        {tokenValue === 'NONE' ?
-          <Label color='red'>{tokenValue}</Label> :
-          <code className={styles.code}>{tokenValue}</code>}
+        {tokenValue ? <code className={styles.code}>{tokenValue}</code> :
+          <Label color='red'>NONE</Label>}
       </p>
       <div>
         <span className={styles.buttonLeft}>
           <ButtonLink text='Get OAuth Token' onClick={authorize} />
         </span>
         <span>
-          <ButtonLink text='Get Protected Resource' onClick={() => navigate(paths.resource)} />
+          <ButtonLink text='Get Protected Resource' onClick={tokenValue ? goToResource : e => authorize(e, 'resource')} />
         </span>
       </div>
     </>
