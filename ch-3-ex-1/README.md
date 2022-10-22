@@ -1,117 +1,17 @@
 # OAuth 2.0 in Action Exercise 3-1
 
-## System Requirements
+## Table of Contents
 
-You will need the following to run this OAuth system:
-
-* PostgreSQL (will need to be installed on your system before you run `bundle install` for any of the Rails apps contained in this directory)
-* Ruby 3.1.2
-* Node.js 18.10.0
-* Yarn 1.22.19
-
-I'm not sure what exactly what the version requirements are for PostgreSQL - I'm running 14.2.1. It is recommended to manage versions of Ruby, Node.js, and Yarn with [asdf](https://asdf-vm.com).
-
-## Dev Environment Setup
-
-Once you have the appropriate system requirements and are using the correct versions of system software (PostgreSQL, Ruby, Node.js, and Yarn), you can run the setup scripts. These instructions assume you have the correct versions of Ruby, Node.js, and Yarn already installed using asdf.
-
-You can install dependencies and set up databases (create, migrate, and seed) for all four apps by running the following from the directory containing this README:
-
-```bash
-./script/setup
-```
-
-If you would like to install dependencies for all apps but not set up the databases or vice versa, you can run:
-
-```bash
-# Install dependencies
-./script/install_deps
-
-# Set up databases
-./script/setup_dbs
-```
-
-## Running Locally
-
-In order for the system to function properly, each of the four applications in this monorepo must be running. Additionally, they must be running on the appropriate ports since this is required by the [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) configurations for the applications.
-
-You'll want to open a separate terminal window for each application to run in. Although the apps have to run together in order for the system to operate, it doesn't matter in which order you start the servers. The servers run on ports 4000-4003, inclusive. This is different from the _OAuth 2.0 in Action_ examples, which run on ports 9000-9002, inclusive. I've done this so that the authors' examples may be run concurrently with these. That way, you can compare results at each step.
-
-Be sure you have run the dev environment setup steps prior to starting the servers or you will get errors.
-
-Each of the sections below assumes you are starting from the root directory of the `ch-3-ex-1` monorepo.
-
-### Auth Server
-
-The auth server should run on port 4003:
-
-```
-cd auth_server
-bundle exec rails s -p 4003
-```
-
-You can visit the auth server's informational page in the browser at `http://localhost:4003` once you've completed these steps.
-
-### Protected Resource
-
-The protected resource should run on port 4002:
-
-```
-cd protected_resource
-bundle exec rails s -p 4002
-```
-
-The protected resource does not have any pages that can be viewed in the browser, it is strictly an API.
-
-### Client Backend
-
-The client backend should run on port 4001:
-
-```
-cd client
-bundle exec rails s -p 4001
-```
-
-### Client Frontend
-
-The client frontend runs on port 4000. This will happen automatically when you start the server using the script defined in the `package.json` file:
-
-```
-cd client_frontend
-yarn start
-```
-
-## Utility Scripts
-
-This monorepo contains handy scripts to enable you to do various tasks for all the apps at once. This way you don't have to `cd` into multiple directories executing commands every time you want to, say, truncate and re-seed all the databases to put the systems back in their starting state.
-
-### Reset Databases and Logs
-
-For troubleshooting, it is often beneficial to truncate databases and logs so you start from a clean slate on the next request.
-
-```bash
-# Truncate and re-seed all 3 back-end databases
-./script/reset_dbs
-
-# Clear logs for all 3 Rails apps
-./script/clear_logs
-
-# Do both of these things in one command
-./script/reset
-```
-
-### Set Up Dev Environments
-
-```bash
-# Install dependencies for all apps with Bundler and Yarn
-./script/install_deps
-
-# Set up databases for all Rails apps (create, migrate, seed)
-./script/setup_dbs
-
-# Do both of these things in one command
-./script/setup
-```
+* [Important Points and Surprising Behaviour](#important-points-and-surprising-behaviour)
+  * [Persistence](#persistence)
+  * [Client Endpoints and Front-End Behaviour](#client-endpoints-and-front-end-behaviour)
+  * [Scopes](#scopes)
+  * [Notes on Parameters in Rails](#notes-on-parameters-in-rails)
+* [Extensions](#extensions)
+  * [Suggested Extension](#suggested-extension)
+    * [Implementation](#implementation)
+  * [Additional UX Improvement](#additional-ux-improvement)
+    * [Implementation](#implementation-1)
 
 ## Important Points and Surprising Behaviour
 
@@ -123,7 +23,7 @@ First of all, data is stored in a Postgres database instead of in variables or a
 
 ### Client Endpoints and Front-End Behaviour
 
-Because access tokens are persisted in the database, an access token could already be present on startup. This differs from the book, which leverages variables and in-memory data stores to keep track of access tokens. Consequently, the book's client application (which is a monolith, in contrast to the client in this system) is able to confidently assume that the correct access token value to display initially is `'NONE'`. Since this isn't the case for these applications, I've added the `/token` endpoint to the client API to enable the front end to fetch the last saved token to display initially. The client does this in a `useEffect` hook, displaying either the access token or any error returned from the endpoint. `'NONE'` is only displayed if the response from the endpoint indicates that there is no saved access token.
+Because access tokens are persisted in the database, an access token could already be present on startup. This differs from the book, which leverages variables and in-memory data stores to keep track of access tokens. Consequently, the book's client application (which is a monolith, in contrast to the client in this system) is able to confidently assume that the correct access token value to display initially is `'NONE'`. Since this isn't the case for these applications, I've added the `GET /token` endpoint to the client API to enable the front end to fetch the last saved token to display initially. The client does this in a `useEffect` hook, displaying either the access token or any error returned from the endpoint. `'NONE'` is only displayed if the response from the endpoint indicates that there is no saved access token.
 
 ### Scopes
 
@@ -168,17 +68,3 @@ In the event there is no such key in the redirect URI hash, the client API defau
 Finally, the front end needed to handle the case where the redirect came to the protected resource page. In the `useEffect` hook where the protected resource is fetched, the front end checks for a query param called `code`, which is the authorisation code sent from the auth server. If this param is included, it calls the client back end's `/callback` endpoint with the query params and waits for that request to resolve before attempting to fetch the protected resource. If there is no `code` query param, the front end requests the `/fetch_resource` endpoint immediately.
 
 Note that the `code` query param will only be included in the callback query string if the client is using OAuth's `authorization_code` grant type. For that reason, in subsequent exercises where additional grant types are used, the approach of checking for a `code` query param will need to be modified.
-
-## Disclaimer
-
-As the authors of _OAuth 2.0 in Action_ have emphasised in their book, this system is appallingly insecure and is intended for illustration purposes only:
-
-* Token values and client secrets are displayed in the GUI of the client and auth server, respectively
-* Values of authorization codes and access tokens are stored in plain text in the database
-* Authorization codes are not tied to client ID so any client could use them
-* Authorization codes and tokens are logged for debugging and troubleshooting purposes
-* CORS permissions are probably a little laxer than they need to be, although I'm not sure about this
-
-None of these things should be the case in a production system so please use care.
-
-Finally, these apps are intended for illustration purposes only. There are various unaccounted-for edge cases and exception handling is minimal. Comments in the code for this exercise will help you see what some of these issues are.
