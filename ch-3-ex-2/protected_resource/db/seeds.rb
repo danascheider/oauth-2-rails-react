@@ -10,3 +10,5 @@ module Seeds
     )
   end
 end
+
+Seeds.seed!

@@ -12,7 +12,7 @@
 #       Install PostgreSQL and put its /bin directory on your path.
 #
 # Configure Using Gemfile
-# gem "pg"
+# gem 'pg'
 #
 default: &default
   adapter: postgresql
@@ -22,14 +22,21 @@ default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
 development:
-  <<: *default
-  database: protected_resource_development_3_2
+  primary:
+    <<: *default
+    database: protected_resource_development_3_2
+    migrations_paths: db/migrate
+  shared:
+    <<: *default
+    database: auth_server_development_3_2
+    database_tasks: false
+    replica: true
 
   # The specified database role being used to connect to postgres.
   # To create additional roles in postgres see `$ createuser --help`.
   # When left blank, postgres will use the default role. This is
   # the same name as the operating system user running Rails.
-  #username: protected_resource
+  #username: auth_server
 
   # The password associated with the postgres role (username).
   #password:
@@ -56,8 +63,15 @@ development:
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
 test:
-  <<: *default
-  database: protected_resource_test_3_2
+  primary:
+    <<: *default
+    database: protected_resource_test_3_2
+    migrations_path: db/migrate
+  shared:
+    <<: *default
+    database: auth_server_development_3_2
+    database_tasks: false
+    replica: true
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -74,13 +88,19 @@ test:
 # URL environment variable explicitly:
 #
 #   production:
-#     url: <%= ENV["MY_APP_DATABASE_URL"] %>
+#     url: <%= ENV['MY_APP_DATABASE_URL'] %>
 #
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
 production:
-  <<: *default
-  database: protected_resource_production_3_2
-  username: protected_resource
-  password: <%= ENV["PROTECTED_RESOURCE_DATABASE_PASSWORD"] %>
+  primary:
+    <<: *default
+    database: protected_resource_production_3_2
+    username: protected_resource
+    password: <%= ENV['PROTECTED_RESOURCE_DATABASE_PASSWORD'] %>
+  shared:
+    <<: *default
+    database: auth_server_production_3_2
+    username: protected_resource
+    password: <%= ENV['AUTH_SERVER_DATABASE_PASSWORD']
