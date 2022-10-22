@@ -14,7 +14,10 @@ module Seeds
       client_id: 'oauth-client-1',
       client_secret: 'oauth-client-1-secret',
       scope: %w[foo bar],
-      redirect_uris: ['http://localhost:4000/callback']
+      redirect_uris: [
+        'http://localhost:4000/callback',
+        'http://localhost:4000/resource'
+      ]
     )
   end
 end
