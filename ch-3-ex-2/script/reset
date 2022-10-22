@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+./script/reset_dbs
+./script/clear_logs
