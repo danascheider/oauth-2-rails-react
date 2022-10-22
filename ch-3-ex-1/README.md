@@ -13,64 +13,22 @@ I'm not sure what exactly what the version requirements are for PostgreSQL - I'm
 
 ## Dev Environment Setup
 
-Once you have the appropriate system requirements and are using the correct versions of system software (PostgreSQL, Ruby, Node.js, and Yarn) run the following.
+Once you have the appropriate system requirements and are using the correct versions of system software (PostgreSQL, Ruby, Node.js, and Yarn), you can run the setup scripts. These instructions assume you have the correct versions of Ruby, Node.js, and Yarn already installed using asdf.
 
-### Auth Server
+You can install dependencies and set up databases (create, migrate, and seed) for all four apps by running the following from the directory containing this README:
 
-From the root directory of this monorepo (`ch-3-ex-1`), run the following:
-
-```
-cd auth_server
-gem install bundler
-bundle install
-bundle exec rails db:setup
+```bash
+./script/setup
 ```
 
-This will install dependencies, create your development and test databases, load the schema, and initialize the development database with seed data. If you would like to run database tasks individually, you can run the following:
+If you would like to install dependencies for all apps but not set up the databases or vice versa, you can run:
 
-```
-bundle exec rails db:create
-bundle exec rails db:migrate
-bundle exec rails db:seed
-```
+```bash
+# Install dependencies
+./script/install_deps
 
-If you prefer, instead of `rails db:migrate`, you may choose `rails db:schema:load`, which loads the current schema instead of running all migrations.
-
-`rails db:seed` adds the client to the `clients` table. It creates a client with client ID `'oauth-client-1'`. If there is already a client in the database with that client ID, it will do nothing. However, you should make sure that any client you create with this ID has the correct values for `scope` and `redirect_uri`.
-
-### Protected Resource
-
-From the root directory of this monorepo (`ch-3-ex-1`), run the following:
-
-```
-cd protected_resource
-gem install bundler
-bundle install
-bundle exec rails db:setup
-```
-
-As with the auth server, you can run the database tasks individually. The `rails db:seed` task creates a single resource in the `resources` table, however, the values for this resource are not important - the only thing required is that the `name` attribute be set.
-
-### Client Backend
-
-From the root directory of this monorepo (`ch-3-ex-1`), run the following:
-
-```
-cd client
-gem install bundler
-bundle install
-bundle exec rails db:setup
-```
-
-There are no models required to be in the client database, so there's no need to run `bundle exec rails db:seed` or create any models in the Rails console prior to use.
-
-### Client Frontend
-
-From the root directory of this monorepo (`ch-3-ex-1`), run the following:
-
-```
-cd client_frontend
-yarn
+# Set up databases
+./script/setup_dbs
 ```
 
 ## Running Locally
@@ -121,6 +79,38 @@ The client frontend runs on port 4000. This will happen automatically when you s
 ```
 cd client_frontend
 yarn start
+```
+
+## Utility Scripts
+
+This monorepo contains handy scripts to enable you to do various tasks.
+
+### Reset Databases and Logs
+
+For troubleshooting, it is often beneficial to truncate databases and logs so you start from a clean slate on the next request.
+
+```bash
+# Truncate and re-seed all 3 back-end databases
+./script/reset_dbs
+
+# Clear logs for all 3 Rails apps
+./script/clear_logs
+
+# Do both of these things in one command
+./script/reset
+```
+
+### Set Up Dev Environments
+
+```bash
+# Install dependencies for all apps with Bundler and Yarn
+./script/install_deps
+
+# Set up databases for all Rails apps (create, migrate, seed)
+./script/setup_dbs
+
+# Do both of these things in one command
+./script/setup
 ```
 
 ## Important Points and Surprising Behaviour
