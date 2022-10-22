@@ -136,7 +136,7 @@ class AuthorizationsController < ApplicationController
       AccessToken.create!(client:, token: access_token, scope:)
 
       Rails.logger.info "Issuing access token '#{access_token}' for refresh token '#{body_params[:refresh_token]}'"
-      render json: { access_token:, token_type: 'Bearer', refresh_token: body_params[:refresh_token] }, status: :ok
+      render json: { access_token:, scope:, token_type: 'Bearer', refresh_token: body_params[:refresh_token] }, status: :ok
     else
       Rails.logger.error "Unknown grant type '#{body_params[:grant_type]}'"
       render json: { error: UNSUPPORTED_GRANT_TYPE }, status: :bad_request
