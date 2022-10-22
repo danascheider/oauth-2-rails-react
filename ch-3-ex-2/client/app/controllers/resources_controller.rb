@@ -5,7 +5,7 @@ require 'uri'
 class ResourcesController < ApplicationController
   def fetch
     access_token = AccessToken.last
-    Rails.logger.info "Making request with access token '#{access_token}'"
+    Rails.logger.info "Making request with access token '#{access_token.access_token}'"
 
     if access_token.nil?
       render json: { error: 'Please authenticate before fetching protected resource.' }, status: :forbidden
@@ -17,12 +17,12 @@ class ResourcesController < ApplicationController
       'Content-Type' => 'application/x-www-form-urlencoded'
     }
 
-    response = Faraday.post(configatron.oauth.resource.endpoint, headers:)
+    response = Faraday.post(configatron.oauth.resource.endpoint, nil, headers)
 
     if response.success?
-      resource = JSON.parse(resource.body)
+      resource = JSON.parse(response.body)
 
-      render json: { resource: body }, status: :ok
+      render json: { resource: }, status: :ok
     else
       refresh_token = access_token.refresh_token
       access_token.destroy!
@@ -50,7 +50,7 @@ class ResourcesController < ApplicationController
 
     Rails.logger.debug "Refreshing token with refresh token '#{refresh_token}'"
 
-    token_response = Faraday.post(configatron.oauth.auth_server.token_endpoint, headers:)
+    token_response = Faraday.post(configatron.oauth.auth_server.token_endpoint, URI.encode_www_form(form_data), headers)
 
     if token_response.success?
       body = JSON.parse(token_response.body, symbolize_names: true)
@@ -66,7 +66,7 @@ class ResourcesController < ApplicationController
         refresh_token = body[:refresh_token]
       end
 
-      AccessToken.create!(access_token:, refresh_token:, scope: scope.split(' '))
+      AccessToken.create!(access_token:, refresh_token:, token_type: 'Bearer', scope: scope.split(' '))
 
       redirect_to fetch_resource_path, status: :found
     else
