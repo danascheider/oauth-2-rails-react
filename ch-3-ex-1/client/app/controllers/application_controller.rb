@@ -4,6 +4,6 @@ class ApplicationController < ActionController::API
   private
 
   def query_params
-    request.query_parameters
+    request.query_parameters || {}
   end
 end
