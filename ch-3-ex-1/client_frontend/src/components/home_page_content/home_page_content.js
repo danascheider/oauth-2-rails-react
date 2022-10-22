@@ -14,7 +14,7 @@ const HomePageContent = ({ tokenValue }) => {
     navigate(paths.resource)
   }
 
-  const authorize = (e, redirectPage = 'callback') => {
+  const authorize = (e, redirectPage = null) => {
     e.preventDefault()
 
     getAuthorize(redirectPage)

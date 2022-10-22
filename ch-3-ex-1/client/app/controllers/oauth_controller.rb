@@ -6,12 +6,7 @@ require 'cgi'
 
 class OauthController < ApplicationController
   def authorize
-    redirect_uri =
-      if query_params[:redirect_page] == 'resource'
-        configatron.oauth.client.redirect_uris[:resource]
-      else
-        configatron.oauth.client.redirect_uris[:callback]
-      end
+    redirect_uri = configatron.oauth.client.redirect_uris[query_params[:redirect_page]&.to_sym] || configatron.oauth.client.redirect_uris[:callback]
 
     data = {
       state: SecureRandom.hex(8),
@@ -31,7 +26,6 @@ class OauthController < ApplicationController
   end
 
   def callback
-    # TODO: Front end should send query to back end with its params and status
     corresponding_request = AuthorizationRequest.find_by(state: query_params[:state])
 
     if corresponding_request.nil?
