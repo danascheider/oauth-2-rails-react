@@ -5,7 +5,7 @@ import ButtonLink from '../button_link/button_link'
 import Label from '../label/label'
 import styles from './home_page_content.module.css'
 
-const HomePageContent = ({ tokenValue = 'NONE' }) => {
+const HomePageContent = ({ tokenValue }) => {
   const navigate = useNavigate()
 
   const authorize = e => {

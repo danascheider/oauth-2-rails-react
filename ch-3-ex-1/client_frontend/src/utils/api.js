@@ -21,3 +21,9 @@ export const getResource = () => {
 
   return fetch(uri)
 }
+
+export const getToken = () => {
+  const uri = `${baseUri}/token`
+
+  return fetch(uri)
+}
