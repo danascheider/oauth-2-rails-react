@@ -8,6 +8,6 @@ class ApplicationController < ActionController::Base
   end
 
   def body_params
-    params.request_parameters
+    request.request_parameters || {}
   end
 end
