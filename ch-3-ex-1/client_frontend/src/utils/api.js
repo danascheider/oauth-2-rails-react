@@ -1,14 +1,10 @@
 const baseUri = 'http://localhost:4001'
-// TODO: I think this is actually supposed to be a response header
-const headers = {
-  'Access-Control-Allow-Origin': 'http://localhost:4000'
-}
 
 export const getAuthorize = (redirectPage = null) => {
   const uri = `${baseUri}/authorize`
   const uriWithQuery = redirectPage ? `${uri}?redirect_page=${redirectPage}` : uri
 
-  return fetch(uriWithQuery, { redirect: 'follow', headers })
+  return fetch(uriWithQuery, { redirect: 'follow' })
 }
 
 export const getCallback = queryString => {
