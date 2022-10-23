@@ -1,0 +1,22 @@
+<h2 class='content-header'>Approve this Client?</h2>
+
+<p class='content-large'><strong>ID:</strong> <code><%= client_id %></code></p>
+
+<%= form_with url: approve_path, method: :post do |form| %>
+  <%= form.hidden_field :reqid, value: req.reqid %>
+
+  <% if req.scope.present? %>
+    <p>The client is requesting access to the following:</p>
+    <ul>
+      <% req.scope.each do |scope| %>
+        <li>
+          <%= form.check_box :"scope_#{scope}", id: "scope_#{scope}", checked: true %>
+          <%= form.label :"scope_#{scope}", scope.humanize %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <%= form.submit 'Approve', class: 'btn btn-success', name: 'approve' %>
+  <%= form.submit 'Deny', class: 'btn btn-danger', name: 'deny' %>
+<% end %>
