@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>ProtectedResource</title>
+    <title>OAuth in Action</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <%= stylesheet_link_tag "application" %>
-    <%= javascript_importmap_tags %>
   </head>
 
   <body>
-    <%= yield %>
+    <%= render 'layouts/top_nav' %>
+    <main id='pageContent'>
+      <div class='container'>
+        <%= yield %>
+      </div>
+    </main>
   </body>
 </html>
