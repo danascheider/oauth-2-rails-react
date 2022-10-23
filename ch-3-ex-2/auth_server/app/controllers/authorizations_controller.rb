@@ -23,7 +23,7 @@ class AuthorizationsController < ApplicationController
       Rails.logger.error "Unknown client #{query_params[:client_id]}"
 
       render 'error', locals: { error: UNKNOWN_CLIENT }
-    elsif client.redirect_uris.exclude?(query_params[:redirect_uri])
+    elsif client.redirect_uris.exclude?(redirect_uri.to_s)
       Rails.logger.error "Mismatched redirect URIs - expected #{client.redirect_uris.join(', ')}, got #{query_params[:redirect_uri]}"
 
       render 'error', locals: { error: INVALID_REDIRECT_URI }
@@ -35,14 +35,18 @@ class AuthorizationsController < ApplicationController
       if disallowed_scopes.present?
         Rails.logger.error "Invalid scope(s) requested: #{disallowed_scopes.join(', ')}"
 
-        render 'error', locals: { error: "Invalid scope(s) requested: #{disallowed_scopes.join(', ')}" }
+        query = CGI.parse(redirect_uri.query || '')
+        query['error'] = INVALID_SCOPE
+        redirect_uri.query = URI.encode_www_form(query)
+
+        redirect_to redirect_uri, status: :found
         return
       end
 
       @req = Request.create!(
         client:,
         reqid: SecureRandom.hex(8),
-        query: URI.encode_www_form(request.query_parameters),
+        query: query_params,
         scope: request_scope,
         redirect_uri: query_params[:redirect_uri]
       )
@@ -61,10 +65,10 @@ class AuthorizationsController < ApplicationController
     if body_params[:approve]
       query_string = redirect_query_string
 
-      if req.query_hash['response_type'] == 'code'
+      if req.query['response_type'] == 'code'
         destroy_request_model_and_redirect(code_response_uri)
       else
-        Rails.logger.error "Invalid response type #{req.query_hash['response_type']}"
+        Rails.logger.error "Invalid response type #{req.query['response_type']}"
 
         destroy_request_model_and_redirect(unsupported_response_type_uri(query_string))
       end
@@ -152,7 +156,7 @@ class AuthorizationsController < ApplicationController
   end
 
   def client
-    @client ||= req.present? ? req&.client : Client.find_by(client_id:)
+    @client ||= req.present? ? req.client : Client.find_by(client_id:)
   end
 
   def request_scope
@@ -254,7 +258,7 @@ class AuthorizationsController < ApplicationController
     AuthorizationCode.create!(code:, authorization_endpoint_request: req.attributes, scope: request_scope)
 
     query_string['code'] = code
-    query_string['state'] = req.query_hash['state']
+    query_string['state'] = req.query['state']
     redirect_uri.query = URI.encode_www_form(query_string)
 
     redirect_uri.to_s
