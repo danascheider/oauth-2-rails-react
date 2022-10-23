@@ -1,9 +1,21 @@
 import { PropTypes } from 'prop-types'
+import { useNavigate } from 'react-router-dom'
+import { getAuthorize } from '../../utils/api'
+import paths from '../../routing/paths'
 import ButtonLink from '../button_link/button_link'
 import Label from '../label/label'
 import styles from './home_page_content.module.css'
 
 const HomePageContent = ({ accessToken, refreshToken, scope }) => {
+  const navigate = useNavigate()
+
+  const authorize = (e, page = null) => {
+    e.preventDefault()
+
+    getAuthorize(page)
+      .then(resp => window.location.href = resp.url)
+  }
+
   return(
     <>
       <p className={styles.text}>
@@ -20,10 +32,10 @@ const HomePageContent = ({ accessToken, refreshToken, scope }) => {
       </p>
       <div className={styles.buttons}>
         <span className={styles.buttonLeft}>
-          <ButtonLink text='Get OAuth Token' onClick={() => {}} />
+          <ButtonLink text='Get OAuth Token' onClick={authorize} />
         </span>
         <span>
-          <ButtonLink text='Fetch Protected Resource' onClick={() => {}} />
+          <ButtonLink text='Fetch Protected Resource' onClick={accessToken ? () => navigate(paths.resource) : e => authorize(e, 'resource')} />
         </span>
       </div>
     </>
