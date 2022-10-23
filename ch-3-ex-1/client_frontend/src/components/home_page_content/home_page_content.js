@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import PropTypes from 'prop-types'
 import paths from '../../routing/paths'
 import { getAuthorize } from '../../utils/api'
 import ButtonLink from '../button_link/button_link'
@@ -40,6 +41,10 @@ const HomePageContent = ({ tokenValue }) => {
       </div>
     </>
   )
+}
+
+HomePageContent.propTypes = {
+  tokenValue: PropTypes.string
 }
 
 export default HomePageContent

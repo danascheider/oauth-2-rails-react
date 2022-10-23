@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import styles from './label.module.css'
 
 const COLORS = {
@@ -10,5 +11,10 @@ const Label = ({ color, children }) => (
     {children}
   </span>
 )
+
+Label.propTypes = {
+  color: PropTypes.oneOf(['blue', 'red']).isRequired,
+  children: PropTypes.node
+}
 
 export default Label

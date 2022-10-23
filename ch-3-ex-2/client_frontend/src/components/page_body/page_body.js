@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import styles from './page_body.module.css'
 
 const PageBody = ({ children }) => (
@@ -7,5 +8,9 @@ const PageBody = ({ children }) => (
     </div>
   </main>
 )
+
+PageBody.propTypes = {
+  children: PropTypes.node
+}
 
 export default PageBody

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import styles from './error_content.module.css'
 
 const ErrorContent = ({ error }) => (
@@ -6,5 +7,9 @@ const ErrorContent = ({ error }) => (
     <p>{error}</p>
   </>
 )
+
+ErrorContent.propTypes = {
+  error: PropTypes.string.isRequired
+}
 
 export default ErrorContent
