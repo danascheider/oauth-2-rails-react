@@ -35,7 +35,7 @@ const ResourcePage = () => {
     if (mountedRef.current) {
       if (queryParams.get('code')) {
         getCallback(queryParams.toString())
-          .then(res => {
+          .then(_res => {
             getResource().then(resp => {
               resp.json().then(json => {
                 setValues(resp.status, json)
@@ -53,7 +53,7 @@ const ResourcePage = () => {
     }
 
     return () => mountedRef.current = false
-  })
+  }, [queryParams])
 
   return(
     <>
