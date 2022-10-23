@@ -3,10 +3,14 @@
 class CreateRequests < ActiveRecord::Migration[7.0]
   def change
     create_table :requests do |t|
+      t.references :client,
+                   null: false,
+                   type: :string,
+                   foreign_key: { to_table: :clients, primary_key: :client_id }
+
       t.string :reqid, null: false, unique: true
-      t.string :query, null: false
-      t.string :client_id, foreign_key: true, null: false
-      t.string :scope, default: [], array: true
+      t.json :query
+      t.string :scope, null: false, default: [], array: true
       t.string :redirect_uri, null: false
 
       t.index :reqid, unique: true
