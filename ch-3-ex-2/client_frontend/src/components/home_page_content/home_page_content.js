@@ -9,10 +9,10 @@ import styles from './home_page_content.module.css'
 const HomePageContent = ({ accessToken, refreshToken, scope }) => {
   const navigate = useNavigate()
 
-  const authorize = e => {
+  const authorize = (e, page = null) => {
     e.preventDefault()
 
-    getAuthorize()
+    getAuthorize(page)
       .then(resp => {
         window.location.href = resp.url
       })
@@ -37,7 +37,7 @@ const HomePageContent = ({ accessToken, refreshToken, scope }) => {
           <ButtonLink text='Get OAuth Token' onClick={authorize} />
         </span>
         <span>
-          <ButtonLink text='Fetch Protected Resource' onClick={() => navigate(paths.resource)} />
+          <ButtonLink text='Fetch Protected Resource' onClick={accessToken ? () => navigate(paths.resource) : e => authorize(e, 'resource')} />
         </span>
       </div>
     </>
