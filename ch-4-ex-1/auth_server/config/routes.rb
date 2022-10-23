@@ -3,5 +3,6 @@
 Rails.application.routes.draw do
   root 'base#index'
 
-  post 'authorize', to: 'authorizations#authorize'
+  get 'authorize', to: 'authorizations#authorize'
+  post 'approve', to: 'authorizations#approve'
 end

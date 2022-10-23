@@ -47,6 +47,9 @@ class AuthorizationsController < ApplicationController
     end
   end
 
+  def approve
+  end
+
   private
 
   attr_reader :client_id
