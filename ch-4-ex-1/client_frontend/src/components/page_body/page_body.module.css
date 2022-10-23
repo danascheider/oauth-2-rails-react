@@ -1,0 +1,13 @@
+.root {
+  width: 100%;
+  background-color: #fff;
+  padding-top: 60px;
+}
+
+.container {
+  width: 70%;
+  margin: 0 auto;
+  background-color: #eee;
+  padding: 48px;
+  border-radius: 6px;
+}
