@@ -63,6 +63,6 @@ class AuthorizationsController < ApplicationController
   end
 
   def req
-    @req ||= Request.find_by(req_id: body_params[:reqid])
+    @req ||= Request.find_by(reqid: body_params[:reqid])
   end
 end
