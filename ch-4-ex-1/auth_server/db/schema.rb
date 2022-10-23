@@ -25,10 +25,14 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_23_061200) do
   end
 
   create_table "requests", force: :cascade do |t|
+    t.string "client_id", null: false
     t.string "reqid", null: false
-    t.json "query"
+    t.string "query"
+    t.string "scope", default: [], null: false, array: true
+    t.string "redirect_uri", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_requests_on_client_id"
     t.index ["reqid"], name: "index_requests_on_reqid", unique: true
   end
 
@@ -47,4 +51,5 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_23_061200) do
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
+  add_foreign_key "requests", "clients", primary_key: "client_id"
 end
