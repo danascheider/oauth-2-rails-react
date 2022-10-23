@@ -6,12 +6,14 @@ require 'securerandom'
 
 class OauthController < ApplicationController
   def authorize
+    redirect_uri = configatron.oauth.client.redirect_uris[query_params[:redirect_page]&.to_sym] || configatron.oauth.client.redirect_uris[:callback]
+
     data = {
       state: SecureRandom.hex(8),
       response_type: 'code',
       client_id: configatron.oauth.client.client_id,
       scope: configatron.oauth.client.scope,
-      redirect_uri: configatron.oauth.client.redirect_uris.first
+      redirect_uri:
     }
 
     uri = URI.parse(configatron.oauth.auth_server.authorization_endpoint)
@@ -40,7 +42,7 @@ class OauthController < ApplicationController
     form_data = {
       grant_type: 'authorization_code',
       code: query_params[:code],
-      redirect_uri: configatron.oauth.client.redirect_uris.first
+      redirect_uri: auth_request.redirect_uri
     }
 
     headers = {

@@ -1,26 +1,54 @@
 import { useState, useEffect, useRef } from 'react'
-import { getResource } from '../../utils/api'
+import { useSearchParams } from 'react-router-dom'
+import { getAuthorize, getCallback, getResource } from '../../utils/api'
 import Nav from '../../components/nav/nav'
 import PageBody from '../../components/page_body/page_body'
 import ErrorContent from '../../components/error_content/error_content'
 import styles from './resource_page.module.css'
 
 const ResourcePage = () => {
+  const [queryParams, _setQueryParams] = useSearchParams()
   const [resource, setResource] = useState([])
   const [error, setError] = useState(null)
   const mountedRef = useRef(true)
 
+  const authorize = () => {
+    getAuthorize('resource')
+      .then(resp => {
+        window.location.href = resp.url
+      })
+  }
+
   useEffect(() => {
     if (mountedRef.current) {
-      getResource().then(resp => {
-        resp.json().then(json => {
-          json.resource ? setResource(json.resource) : setError(json.error)
+      if (queryParams.get('code')) {
+        getCallback(queryParams)
+          .then(_res => {
+            getResource().then(resp => {
+              if (resp.status === 401) {
+                authorize()
+              } else {
+                resp.json().then(json => {
+                  json.resource ? setResource(json.resource) : setError(json.error)
+                })
+              }
+            })
+          })
+      } else {
+        getResource().then(resp => {
+          if (resp.status === 401) {
+            authorize()
+          } else {
+            resp.json().then(json => {
+              json.resource ? setResource(json.resource) : setError(json.error)
+            })
+          }
         })
-      })
+      }
     }
 
     return () => mountedRef.current = false
-  }, [])
+  }, [queryParams])
 
   return(
     <>

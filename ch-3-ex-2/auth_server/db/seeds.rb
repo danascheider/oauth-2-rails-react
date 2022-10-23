@@ -8,7 +8,7 @@ module Seeds
       client_id: 'oauth-client-1',
       client_secret: 'oauth-client-secret-1',
       scope: %w[foo bar],
-      redirect_uris: ['http://localhost:4000/callback']
+      redirect_uris: ['http://localhost:4000/callback', 'http://localhost:4000/resource']
     )
 
     # The database is initially seeded with an expired access token for the client.

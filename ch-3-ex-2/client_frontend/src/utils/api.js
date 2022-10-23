@@ -1,9 +1,10 @@
 const baseUri = 'http://localhost:4001'
 
-export const getAuthorize = () => {
+export const getAuthorize = (redirectPage = null) => {
   const uri = `${baseUri}/authorize`
+  const uriWithQuery = redirectPage ? `${uri}?redirect_page=${redirectPage}` : uri
 
-  return fetch(uri)
+  return fetch(uriWithQuery)
 }
 
 export const getCallback = queryString => {
