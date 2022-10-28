@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
-class CreateRequests < ActiveRecord::Migration[7.0]
+class CreateRefreshTokens < ActiveRecord::Migration[7.0]
   def change
-    create_table :requests do |t|
+    create_table :refresh_tokens do |t|
       t.references :client,
                    null: false,
                    type: :string,
                    foreign_key: { to_table: :clients, primary_key: :client_id }
 
-      t.string :reqid, null: false, unique: true
-      t.json :query
+      t.references :user, null: false, foreign_key: true
+      t.string :token, null: false, unique: true
       t.string :scope, array: true, null: false, default: []
-      t.string :redirect_uri, null: false
 
-      t.index :reqid, unique: true
+      t.index :token, unique: true
+      t.index %i[client_id user_id], unique: true
 
       t.timestamps
     end

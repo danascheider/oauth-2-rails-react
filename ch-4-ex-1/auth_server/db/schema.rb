@@ -10,9 +10,34 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_23_061200) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_28_223924) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "access_tokens", force: :cascade do |t|
+    t.string "client_id", null: false
+    t.bigint "user_id", null: false
+    t.string "token", null: false
+    t.string "token_type", null: false
+    t.string "scope", default: [], null: false, array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_access_tokens_on_client_id"
+    t.index ["token"], name: "index_access_tokens_on_token", unique: true
+    t.index ["user_id"], name: "index_access_tokens_on_user_id"
+  end
+
+  create_table "authorization_codes", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "request_id", null: false
+    t.string "code", null: false
+    t.string "scope", default: [], null: false, array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_authorization_codes_on_code", unique: true
+    t.index ["request_id"], name: "index_authorization_codes_on_request_id"
+    t.index ["user_id"], name: "index_authorization_codes_on_user_id"
+  end
 
   create_table "clients", force: :cascade do |t|
     t.string "client_id", null: false
@@ -24,10 +49,23 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_23_061200) do
     t.index ["client_id"], name: "index_clients_on_client_id", unique: true
   end
 
+  create_table "refresh_tokens", force: :cascade do |t|
+    t.string "client_id", null: false
+    t.bigint "user_id", null: false
+    t.string "token", null: false
+    t.string "scope", default: [], null: false, array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id", "user_id"], name: "index_refresh_tokens_on_client_id_and_user_id", unique: true
+    t.index ["client_id"], name: "index_refresh_tokens_on_client_id"
+    t.index ["token"], name: "index_refresh_tokens_on_token", unique: true
+    t.index ["user_id"], name: "index_refresh_tokens_on_user_id"
+  end
+
   create_table "requests", force: :cascade do |t|
     t.string "client_id", null: false
     t.string "reqid", null: false
-    t.string "query"
+    t.json "query"
     t.string "scope", default: [], null: false, array: true
     t.string "redirect_uri", null: false
     t.datetime "created_at", null: false
@@ -51,5 +89,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_23_061200) do
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
+  add_foreign_key "access_tokens", "clients", primary_key: "client_id"
+  add_foreign_key "access_tokens", "users"
+  add_foreign_key "refresh_tokens", "clients", primary_key: "client_id"
+  add_foreign_key "refresh_tokens", "users"
   add_foreign_key "requests", "clients", primary_key: "client_id"
 end
