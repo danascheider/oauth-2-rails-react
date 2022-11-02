@@ -7,6 +7,7 @@ class CreateAuthorizationCodes < ActiveRecord::Migration[7.0]
       t.references :request, null: false
 
       t.string :code, null: false, unique: true
+      t.json :authorization_endpoint_request
       t.string :scope, array: true, null: false, default: []
 
       t.index :code, unique: true

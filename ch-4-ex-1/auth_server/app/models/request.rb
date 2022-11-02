@@ -11,7 +11,7 @@ class Request < ApplicationRecord
   validates :scope, presence: true, unless: :empty_scope?
 
   def response_type
-    query[:response_type]
+    query['response_type']
   end
 
   private

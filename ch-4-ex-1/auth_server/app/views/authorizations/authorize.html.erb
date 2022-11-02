@@ -17,6 +17,15 @@
     </ul>
   <% end %>
 
+    <p>Data will be requested for the following user:</p>
+    <ul>
+      <% User.all.each do |user| %>
+        <li>
+          <%= form.radio_button :user, user.sub, required: true %><%= user.name %>
+        </li>
+      <% end %>
+    </ul>
+
   <%= form.submit 'Approve', class: 'btn btn-success', name: 'approve' %>
   <%= form.submit 'Deny', class: 'btn btn-danger', name: 'deny' %>
 <% end %>
