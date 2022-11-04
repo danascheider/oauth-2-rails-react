@@ -12,3 +12,9 @@ export const getToken = () => {
 
   return fetch(uri)
 }
+
+export const getCallback = queryString => {
+  const uri = `${baseUri}/callback?${queryString}`
+
+  return fetch(uri)
+}
