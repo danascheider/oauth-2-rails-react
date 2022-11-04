@@ -25,5 +25,61 @@ class OauthController < ApplicationController
   end
 
   def callback
+    if query_params[:error].present?
+      render json: { error: query_params[:error] }, status: :forbidden
+      return
+    end
+
+    if authorization_request.nil?
+      console.error "State value #{query_params[:state]} did not match an existing authorization request"
+      render json: { error: 'State value did not match' }, status: :forbidden
+      return
+    end
+
+    form_data = {
+      code: query_params[:code],
+      grant_type: 'authorization_code',
+      redirect_uri: configatron.oauth.client.redirect_uris.first
+    }
+
+    headers = {
+      'Content-Type' => 'x-www-form-urlencoded',
+      'Authorization' => "Basic #{client_credentials}"
+    }
+
+    token_response = Faraday.post(
+                                    configatron.oauth.auth_server.token_endpoint,
+                                    URI.encode_www_form(form_data),
+                                    headers
+                                  )
+
+    Rails.logger.info "Requested access token for code '#{query_params[:code]}'"
+
+    if token_response.success?
+      body = JSON.parse(token_response.body, symbolize_names: true)
+      access_token, refresh_token, scope = body[:access_token], body[:refresh_token], body[:scope]
+
+      Rails.logger.info "Got access token: '#{access_token}'"
+      Rails.logger.info "Got refresh token: '#{refresh_token}'" if refresh_token.present?
+      Rails.logger.info "Got scope: '#{scope}'"
+
+      render json: { access_token:, refresh_token:, scope: }, status: :ok
+    else
+      error = "Unable to fetch access token, server response: #{token_response.status}"
+      render json: { error: }, status: token_response.status
+    end
+  end
+
+  private
+
+  def client_credentials
+    client_id = CGI.escape(configatron.oauth.client.client_id)
+    client_secret = CGI.escape(configatron.oauth.client.client_secret)
+
+    Base64.encode64("#{client_id}:#{client_secret}")
+  end
+
+  def authorization_request
+    @authorization_request ||= AuthorizationRequest.find_by(state: query_params[:state])
   end
 end
