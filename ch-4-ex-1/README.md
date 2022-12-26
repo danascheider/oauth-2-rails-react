@@ -6,17 +6,19 @@
   * [Persistence](#persistence)
   * [Client Endpoints and Front-End Behaviour](#client-endpoints-and-front-end-behaviour)
   * [Notes on Parameters in Rails](#notes-on-parameters-in-rails)
+  * [Users](#users)
+  * [Nonce](#nonce)
 * [Extensions](#extensions)
   * [Suggested Extension](#suggested-extension)
     * [Implementation](#implementation)
 
 ## Important Points and Surprising Behaviour
 
-There are a couple ways in which this application differs from the one in _OAuth 2.0 in Action_. First of all, data is stored in a Postgres database instead of in variables or an in-memory data store. This means that persistence is slightly different. For example, there is a `/token` endpoint on the client backend that enables the client to fetch the most recent access token to display on the homepage when it loads.
+There are a couple ways in which this application differs from the one in _OAuth 2.0 in Action_.
 
 ### Persistence
 
-First of all, data is stored in a Postgres database instead of in variables or an in-memory data store. This means that persistence and a couple other aspects of the system's function are different. When the application makes requests using a token, it uses the most recent token stored in the database. The client backend database is seeded with an expired access token, which has a refresh token that will work with the auth server.
+First of all, data is stored in a Postgres database instead of in variables or an in-memory data store. This means that persistence and a couple other aspects of the system's function are different. For example, there is a `/token` endpoint on the client backend that enables the client to fetch the most recent access token to display on the homepage when it loads. When the application makes requests using a token, it uses the most recent token stored in the database. The client backend database is seeded with an expired access token, which has a refresh token that will work with the auth server.
 
 ### Client Endpoints and Front-End Behaviour
 
@@ -29,6 +31,24 @@ If you have run the setup script or seeded the client's database manually, there
 The OAuth protocol is often very specific about how parameters and other data need to be passed, making use of headers, query strings, and post data. In Rails, query strings and post data are combined into a single `params` object. In general, controllers access these values agnostically. Although doing it that way would probably not cause problems in this system, to more clearly illustrate the OAuth protocol, I've separated params into query parameters (accessed with `request.query_parameters` within the controller) and body parameters (accessed with `request.request_parameters` within the controller). In cases where it truly does not matter, the default `params` hash is still used.
 
 There is one important implication to the fact that query strings and post data are combined into a single `params` object: if the post data and query string contain the same key, one will overwrite the other since a hash can only contain a single value for each key. This prevents us from, say, raising an error when `client_id` is sent to the auth server's `/token` endpoint in both the query string and the post data the way an error is raised when the `client_id` is sent in both the `Authorization` header and the params. This is only a small issue in this application but it is worth being aware of if you decide to modify or extend the code.
+
+### Users
+
+In the book's examples, the authorization server has a concept of users that doesn't exist in the other components (client or protected resource). It seems the authors implemented this feature only partially. Since I'm not sure what the endgame was in including users, I also have only implemented it partially. Users exist for the authorization server and may be selected using radio buttons on the authorization server's approval page, however, the client and protected resource don't actually do anything with this information.
+
+### Nonce
+
+The `AuthorizationsController#generate_token_response` method in the authorization server takes a `nonce` as an optional argument. In the `#token` endpoint, this value is passed in as the nonce associated with the `AuthorizationCode` when it was created. The book's example doesn't actually use the nonce in generating the tokens, though, nor is there a way to actually set a nonce for the authorization code model. Like users, this seems to be functionality that the authors didn't fully implement, or was intended as an extension for readers.
+
+### Client Credentials Grant Type
+
+In the authorization server's `#token` endpoint handler, the client is first identified using either the authorization header or post body params. (The book indicates that it could also be identified by query params, however, the code example doesn't check the query params for the client ID/secret values, so I haven't done that in this example either.) If the client does not exist, or if the secret doesn't match, an error is returned. However, later, if the body params indicate the grant type is `'client_credentials'`, the `client` variable is set again using the `client_id` from the query params. There is no error handling in the cases where (1) no client exists with the given ID, (2) no client ID is present in the query params or (3) the client secret is missing from the query params or doesn't match the client ID. I suspect this is an error, but have left it as-is in this example.
+
+### Password Grant Type
+
+Users are uniquely identified by `sub` value in this application, and not by `username`. `username` is not a column in the `users` table, with the closest column being `preferred_username`. The fact that this field is called "preferred" suggests to me that it may not be unique, however, the `sub` would be a unique identifier so I've used it instead (in this and other places where users are identified). It is also worth noting here that not all users have a password. In fact, of the four seeded users, only one has a password.
+
+In the book, the `password` grant type does not check the request scope against the client's scope. I believe this to be in error and have changed it in this implementation so that, if the request scope is more permissive than the client scope, a 400 error is returned indicating a bad scope.
 
 ## Extensions
 

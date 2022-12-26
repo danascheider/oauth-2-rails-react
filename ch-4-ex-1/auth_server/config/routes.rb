@@ -5,4 +5,5 @@ Rails.application.routes.draw do
 
   get 'authorize', to: 'authorizations#authorize'
   post 'approve', to: 'authorizations#approve'
+  post 'token', to: 'authorizations#token'
 end
