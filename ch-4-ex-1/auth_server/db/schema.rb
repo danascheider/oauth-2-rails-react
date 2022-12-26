@@ -20,6 +20,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_28_223924) do
     t.string "token", null: false
     t.string "token_type", null: false
     t.string "scope", default: [], null: false, array: true
+    t.datetime "expires_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_access_tokens_on_client_id"

@@ -45,7 +45,7 @@ class OauthController < ApplicationController
 
     headers = {
       'Content-Type' => 'application/x-www-form-urlencoded',
-      'Authorization' => "Basic #{client_credentials}"
+      'Authorization' => "Basic #{oauth_client_credentials}"
     }
 
     token_response = Faraday.post(
@@ -80,13 +80,6 @@ class OauthController < ApplicationController
   end
 
   private
-
-  def client_credentials
-    client_id = CGI.escape(configatron.oauth.client.client_id)
-    client_secret = CGI.escape(configatron.oauth.client.client_secret)
-
-    Base64.encode64("#{client_id}:#{client_secret}")
-  end
 
   def authorization_request
     @authorization_request ||= AuthorizationRequest.find_by(state: query_params[:state])

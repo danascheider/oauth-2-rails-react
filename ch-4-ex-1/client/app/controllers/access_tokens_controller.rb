@@ -5,7 +5,7 @@ class AccessTokensController < ApplicationController
     if AccessToken.count == 0
       head :no_content
     else
-      render json: { token: AccessToken.last }, status: :ok
+      render json: AccessToken.last, status: :ok
     end
   end
 end

@@ -20,6 +20,7 @@ const HomePage = () => {
 
           resp.json()
             .then(json => {
+              console.log(json)
               if (json.error) {
                 setError(json.error)
               } else {

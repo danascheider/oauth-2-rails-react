@@ -129,11 +129,9 @@ class AuthorizationsController < ApplicationController
 
           Rails.logger.info "Issued tokens for code '#{body_params[:code]}'"
           render json: token_response, status: :ok
-          return
         else
           Rails.logger.error "Client mismatch: expected '#{authorization_code.client_id}', got '#{client_id}'"
           render json: { error: INVALID_GRANT }, status: :bad_request
-          return
         end
       else
         Rails.logger.error "Unknown code '#{body_params[:code]}'"
@@ -156,10 +154,11 @@ class AuthorizationsController < ApplicationController
         client:,
         token: access_token,
         token_type: 'Bearer',
-        scope:
+        scope:,
+        expires_at: Time.zone.now + 1.minute
       )
 
-      Rails.logger.info "Issuing access token '#{access_token} for client ID '#{client.client_id}'"
+      Rails.logger.info "Issuing access token '#{access_token}' for client ID '#{client.client_id}'"
       token_response = { access_token:, token_type: 'Bearer', scope: scope.join(' ') }
 
       render json: token_response, status: :ok
@@ -184,7 +183,10 @@ class AuthorizationsController < ApplicationController
           AccessToken.create!(
             client:,
             user:,
-            token: access_token
+            token: access_token,
+            token_type: 'Bearer',
+            scope: refresh_token.scope,
+            expires_at: Time.zone.now + 1.minute
           )
 
           Rails.logger.info "Issuing access token '#{access_token}' for refresh token '#{body_params[:refresh_token]}'"
@@ -308,7 +310,8 @@ class AuthorizationsController < ApplicationController
       user:,
       token: access_token,
       token_type: 'Bearer',
-      scope:
+      scope:,
+      expires_at: Time.zone.now + 1.minute
     )
 
     Rails.logger.info "Issuing access token '#{access_token}' for client '#{client.client_id}' and user '#{user.sub}' with scope '#{scope.join(' ')}'"

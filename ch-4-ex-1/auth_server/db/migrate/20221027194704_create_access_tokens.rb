@@ -12,6 +12,7 @@ class CreateAccessTokens < ActiveRecord::Migration[7.0]
       t.string :token, null: false, unique: true
       t.string :token_type, null: false
       t.string :scope, array: true, null: false, default: []
+      t.datetime :expires_at, null: false
 
       t.index :token, unique: true
 
