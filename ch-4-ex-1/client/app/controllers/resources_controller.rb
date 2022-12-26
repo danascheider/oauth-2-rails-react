@@ -6,22 +6,22 @@ class ResourcesController < ApplicationController
   def fetch
     token = AccessToken.last
 
-    Rails.logger.info "Making request with access token '#{access_token.access_token}'"
+    Rails.logger.info "Making request with access token '#{token.access_token}'"
 
     headers = {
       'Content-Type' => 'application/x-www-form-urlencoded',
       'Authorization' => "Bearer #{token.access_token}"
     }
 
-    response = Faraday.post(configatron.oauth.resource.endpoint, nil, headers)
+    response = Faraday.get(configatron.oauth.resource.endpoint, nil, headers)
 
     if response.success?
       resource = JSON.parse(response.body)
 
       render json: { resource: }, status: :ok
     else
-      refresh_token = access_token.refresh_token
-      access_token.destroy!
+      refresh_token = token.refresh_token
+      token.destroy!
 
       if refresh_token.present?
         refresh_access_token(refresh_token)

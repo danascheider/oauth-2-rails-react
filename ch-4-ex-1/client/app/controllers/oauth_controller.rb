@@ -64,6 +64,13 @@ class OauthController < ApplicationController
       Rails.logger.info "Got refresh token: '#{refresh_token}'" if refresh_token.present?
       Rails.logger.info "Got scope: '#{scope}'"
 
+      AccessToken.create!(
+        access_token:,
+        refresh_token:,
+        scope:,
+        token_type: 'Bearer'
+      )
+
       render json: { access_token:, refresh_token:, scope: }, status: :ok
     else
       Rails.logger.error JSON.parse(token_response.body, symbolize_names: true)[:error]
