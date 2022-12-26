@@ -7,6 +7,10 @@ class ApplicationController < ActionController::API
 
   attr_reader :access_token
 
+  def body_params
+    request.request_parameters
+  end
+
   def query_params
     request.query_parameters
   end
@@ -17,7 +21,7 @@ class ApplicationController < ActionController::API
     raise "Invalid authorization header '#{auth}'" if auth.present? && !auth.match?(/^bearer .*/i)
 
     token = auth&.gsub(/bearer /i, '') || body_params[:access_token] || query_params[:access_token]
-    @access_token = AccessToken.find_by(token:)
+    @access_token = AccessToken.find_by(access_token: token)
 
     if access_token.present?
       Rails.logger.info "Found a matching token: '#{token}'"

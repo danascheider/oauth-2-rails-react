@@ -7,7 +7,6 @@ class AccessToken < ApplicationRecord
   belongs_to :user
 
   validates :token, presence: true, uniqueness: true
-  validates :refresh_token, unique: true, allow_nil: true
   validates :token_type, presence: true, inclusion: { in: TOKEN_TYPES }
   validates :scope, presence: true, unless: :empty_scope?
 

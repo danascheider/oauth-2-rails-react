@@ -71,15 +71,19 @@ class AuthorizationsController < ApplicationController
           return
         end
 
-        code = AuthorizationCode.create!(
+        code = SecureRandom.hex(8)
+
+        Rails.logger.info "Saving authorization code '#{code}' for client '#{req.client_id}'"
+
+        AuthorizationCode.create!(
           user:,
-          request: req,
-          code: SecureRandom.hex(8),
+          client: req.client,
+          code:,
           scope: request_scope,
           authorization_endpoint_request: query_params
         )
 
-        uri = build_redirect_uri({ code: code.code, state: req.query['state'] })
+        uri = build_redirect_uri({ code: code, state: req.query['state'], user: user.sub })
         redirect_to uri, status: :found
         return
       elsif req.response_type == 'token'
@@ -116,7 +120,7 @@ class AuthorizationsController < ApplicationController
 
     if body_params[:grant_type] == AUTHORIZATION_CODE
       if authorization_code.present?
-        if code.client == client
+        if authorization_code.client == client
           token_response = generate_token_response(
                                                     scope: authorization_code.scope,
                                                     nonce: authorization_code.authorization_endpoint_request['nonce'].presence,
@@ -125,9 +129,11 @@ class AuthorizationsController < ApplicationController
 
           Rails.logger.info "Issued tokens for code '#{body_params[:code]}'"
           render json: token_response, status: :ok
+          return
         else
           Rails.logger.error "Client mismatch: expected '#{authorization_code.client_id}', got '#{client_id}'"
           render json: { error: INVALID_GRANT }, status: :bad_request
+          return
         end
       else
         Rails.logger.error "Unknown code '#{body_params[:code]}'"
@@ -208,8 +214,8 @@ class AuthorizationsController < ApplicationController
         return
       end
 
-      if (request_scope - client.scope).any?
-        Rails.logger.error "Invalid scope requested: '#{request_scope.join(' ')}'"
+      if disallowed_scopes.present?
+        Rails.logger.error "Invalid scope(s) requested: '#{disallowed_scopes.join(' ')}'"
         render json: { error: INVALID_SCOPE }, status: :bad_request
         return
       end
@@ -221,6 +227,8 @@ class AuthorizationsController < ApplicationController
       Rails.logger.error "Unknown grant type '#{body_params[:grant_type]}'"
       render json: { error: UNSUPPORTED_GRANT_TYPE }, status: :bad_request
     end
+  rescue StandardError => e
+    Rails.logger.error e.message
   end
 
   private
@@ -305,7 +313,7 @@ class AuthorizationsController < ApplicationController
 
     Rails.logger.info "Issuing access token '#{access_token}' for client '#{client.client_id}' and user '#{user.sub}' with scope '#{scope.join(' ')}'"
 
-    refresh_token = RefreshToken.for_client_and_user(client, user)&.token
+    refresh_token = RefreshToken.for_client_and_user(client, user).last&.token
 
     # By default, a refresh token will be generated only if one doesn't exist. This behaviour
     # can be overridden, forcing a new refresh token to be created, if the `generate_refresh_token`

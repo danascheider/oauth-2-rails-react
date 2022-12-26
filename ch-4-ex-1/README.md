@@ -38,7 +38,9 @@ There is one important implication to the fact that query strings and post data 
 
 ### Users
 
-In the book's examples, the authorization server has a concept of users that doesn't exist in the other components (client or protected resource). It seems the authors implemented this feature only partially. Since I'm not sure what the endgame was in including users, I also have only implemented it partially. Users exist for the authorization server and may be selected using radio buttons on the authorization server's approval page, however, the client and protected resource don't actually do anything with this information.
+In the book's examples, the authorization server has a concept of users that doesn't exist in the other components (client or protected resource). It seems the authors implemented this feature only partially. Since I'm not sure what the endgame was in including users, I also have only implemented it partially. However, because the authorization server requires user to be specified in certain parameters, I've made the client backend also aware of the user `sub` value so that it can request tokens for that user.
+
+In particular, I've modified the query string sent to the client's callback URI to include the user's `sub` value. When the authorization code is exchanged for a token, the client then includes a `user` param with this value that the auth server can use to identify the resource owner.
 
 ### Nonce
 
@@ -60,11 +62,13 @@ In the book's example, the authorization server issues refresh tokens and handle
 
 ### Client Scope
 
+I've modified the client's scope to include one value, `'foo'`. Otherwise, including any scope value with a request would result in disallowed scopes and an error response from the auth server or protected resource.
+
 ## Extensions
 
 ### Suggested Extension
 
-#### Implementation
+There is no suggested extension for this exercise.
 
 ## Notes
 

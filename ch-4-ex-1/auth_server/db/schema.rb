@@ -29,14 +29,14 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_28_223924) do
 
   create_table "authorization_codes", force: :cascade do |t|
     t.bigint "user_id", null: false
-    t.bigint "request_id", null: false
+    t.string "client_id", null: false
     t.string "code", null: false
     t.json "authorization_endpoint_request"
     t.string "scope", default: [], null: false, array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_authorization_codes_on_client_id"
     t.index ["code"], name: "index_authorization_codes_on_code", unique: true
-    t.index ["request_id"], name: "index_authorization_codes_on_request_id"
     t.index ["user_id"], name: "index_authorization_codes_on_user_id"
   end
 
@@ -92,6 +92,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_28_223924) do
 
   add_foreign_key "access_tokens", "clients", primary_key: "client_id"
   add_foreign_key "access_tokens", "users"
+  add_foreign_key "authorization_codes", "clients", primary_key: "client_id"
   add_foreign_key "refresh_tokens", "clients", primary_key: "client_id"
   add_foreign_key "refresh_tokens", "users"
   add_foreign_key "requests", "clients", primary_key: "client_id"

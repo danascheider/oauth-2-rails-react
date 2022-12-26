@@ -38,6 +38,7 @@ class OauthController < ApplicationController
 
     form_data = {
       code: query_params[:code],
+      user: query_params[:user],
       grant_type: 'authorization_code',
       redirect_uri: configatron.oauth.client.redirect_uris.first
     }
@@ -65,7 +66,8 @@ class OauthController < ApplicationController
 
       render json: { access_token:, refresh_token:, scope: }, status: :ok
     else
-      error = "Unable to fetch access token, server response: #{token_response.status}"
+      Rails.logger.error JSON.parse(token_response.body, symbolize_names: true)[:error]
+      error = "Unable to fetch access token, error (#{token_response.status})"
       render json: { error: }, status: token_response.status
     end
   end
