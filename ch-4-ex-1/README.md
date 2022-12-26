@@ -68,7 +68,7 @@ I've modified the client's scope to include one value, `'foo'`. Otherwise, inclu
 
 ### Suggested Extension
 
-There is no suggested extension for this exercise.
+There is no suggested extension for this exercise. However, I have made a small change to the authorization flow: when a user visits the `/resource` page of the client front end and the token is expired or absent, they are redirected to the auth server, which sets the redirect URI to the `/resource` page. That way, users are redirected to where they originally wanted to go.
 
 ## Notes
 

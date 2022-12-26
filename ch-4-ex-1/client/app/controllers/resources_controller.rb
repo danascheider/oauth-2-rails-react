@@ -6,28 +6,32 @@ class ResourcesController < ApplicationController
   def fetch
     token = AccessToken.last
 
-    Rails.logger.info "Making request with access token '#{token.access_token}'"
+    if token.present?
+      Rails.logger.info "Making request with access token '#{token.access_token}'"
 
-    headers = {
-      'Content-Type' => 'application/x-www-form-urlencoded',
-      'Authorization' => "Bearer #{token.access_token}"
-    }
+      headers = {
+        'Content-Type' => 'application/x-www-form-urlencoded',
+        'Authorization' => "Bearer #{token&.access_token}"
+      }
 
-    response = Faraday.get(configatron.oauth.resource.endpoint, nil, headers)
+      response = Faraday.get(configatron.oauth.resource.endpoint, nil, headers)
 
-    if response.success?
-      resource = JSON.parse(response.body)
+      if response.success?
+        resource = JSON.parse(response.body)
 
-      render json: { resource: }, status: :ok
-    else
-      refresh_token = token.refresh_token
-      token.destroy!
-
-      if refresh_token.present?
-        refresh_access_token(refresh_token)
+        render json: { resource: }, status: :ok
       else
-        render json: { error: "Server returned status #{response.status}" }, status: response.status
+        refresh_token = token&.refresh_token
+        token&.destroy!
+
+        if refresh_token.present?
+          refresh_access_token(refresh_token)
+        else
+          render json: { error: "Server returned status #{response.status}" }, status: response.status
+        end
       end
+    else
+      redirect_to authorize_path
     end
   end
 
@@ -40,7 +44,7 @@ class ResourcesController < ApplicationController
     }
 
     headers = {
-      'Authorization' => "Basic #{client_credentials}",
+      'Authorization' => "Basic #{oauth_client_credentials}",
       'Content-Type' => 'application/x-www-form-urlencoded'
     }
 

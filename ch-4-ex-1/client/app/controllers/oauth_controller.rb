@@ -11,7 +11,7 @@ class OauthController < ApplicationController
       response_type: 'code',
       scope: configatron.oauth.client.scope,
       client_id: configatron.oauth.client.client_id,
-      redirect_uri: configatron.oauth.client.redirect_uris[0],
+      redirect_uri: redirect_page || configatron.oauth.client.redirect_uris[0],
     }
 
     uri = URI.parse(configatron.oauth.auth_server.authorization_endpoint)
@@ -83,5 +83,11 @@ class OauthController < ApplicationController
 
   def authorization_request
     @authorization_request ||= AuthorizationRequest.find_by(state: query_params[:state])
+  end
+
+  def redirect_page
+    return unless query_params.key?(:redirect_page)
+
+    "http://localhost:4000/#{query_params[:redirect_page]}"
   end
 end

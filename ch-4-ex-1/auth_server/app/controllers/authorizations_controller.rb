@@ -29,7 +29,7 @@ class AuthorizationsController < ApplicationController
       render 'error', locals: { error: 'Unknown client' }
       return
     elsif client.redirect_uris.exclude?(redirect_uri.to_s)
-      Rails.logger.error "Mismatched redirect URI: expected '#{client.redirect_uri}', got '#{redirect_uri}'"
+      Rails.logger.error "Mismatched redirect URI: expected '#{client.redirect_uris}', got '#{redirect_uri}'"
       render 'error', locals: { error: 'Invalid redirect URI' }
       return
     else
@@ -182,7 +182,7 @@ class AuthorizationsController < ApplicationController
 
           AccessToken.create!(
             client:,
-            user:,
+            user: refresh_token.user,
             token: access_token,
             token_type: 'Bearer',
             scope: refresh_token.scope,
