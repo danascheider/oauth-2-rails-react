@@ -43,7 +43,7 @@ class OauthController < ApplicationController
     }
 
     headers = {
-      'Content-Type' => 'x-www-form-urlencoded',
+      'Content-Type' => 'application/x-www-form-urlencoded',
       'Authorization' => "Basic #{client_credentials}"
     }
 
