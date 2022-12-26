@@ -8,9 +8,13 @@
   * [Notes on Parameters in Rails](#notes-on-parameters-in-rails)
   * [Users](#users)
   * [Nonce](#nonce)
+  * [Client Credentials Grant Type](#client-credentials-grant-type)
+  * [Password Grant Type](#password-grant-type)
+  * [Refresh Tokens from the Client's Perspective](#refresh-tokens-from-the-clients-perspective)
 * [Extensions](#extensions)
   * [Suggested Extension](#suggested-extension)
     * [Implementation](#implementation)
+* [Notes](#notes)
 
 ## Important Points and Surprising Behaviour
 
@@ -18,7 +22,7 @@ There are a couple ways in which this application differs from the one in _OAuth
 
 ### Persistence
 
-First of all, data is stored in a Postgres database instead of in variables or an in-memory data store. This means that persistence and a couple other aspects of the system's function are different. For example, there is a `/token` endpoint on the client backend that enables the client to fetch the most recent access token to display on the homepage when it loads. When the application makes requests using a token, it uses the most recent token stored in the database. The client backend database is seeded with an expired access token, which has a refresh token that will work with the auth server.
+First of all, data is stored in Postgres databases instead of in variables or an in-memory data store. This means that persistence and a couple other aspects of the system's function are different. For example, there is a `/token` endpoint on the client backend that enables the client to fetch the most recent access token to display on the homepage when it loads. When the application makes requests using a token, it uses the most recent token stored in the database. The client backend database is seeded with an expired access token, which has a refresh token that will work with the auth server.
 
 ### Client Endpoints and Front-End Behaviour
 
@@ -50,8 +54,18 @@ Users are uniquely identified by `sub` value in this application, and not by `us
 
 In the book, the `password` grant type does not check the request scope against the client's scope. I believe this to be in error and have changed it in this implementation so that, if the request scope is more permissive than the client scope, a 400 error is returned indicating a bad scope.
 
+### Refresh Tokens from the Client's Perspective
+
+In the book's example, the authorization server issues refresh tokens and handles the `'refresh_token'` grant type, but the client doesn't actually use the refresh tokens. Because this functionality is implemented in the auth server, I've decided to implement it in the client backend code as well. Like the previous exercise (ex. 3-2), this client will automatically request a new access token if a request to the protected resource fails.
+
+### Client Scope
+
 ## Extensions
 
 ### Suggested Extension
 
 #### Implementation
+
+## Notes
+
+The auth server's `AuthorizationsController` is extremely unwieldy in this application and I would generally use service classes to encapsulate logic better. I probably will do that in future exercises because different ways of constructing responses and identifying clients, users, etc. are making it hard to create and name all the private methods required if we don't want the entire controller to be a massive wall of code. For the present example, I stuck to the code in the book for the sake of "simplicity", but I'm not sure simplicity was the result.
