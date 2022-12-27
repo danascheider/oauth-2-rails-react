@@ -90,6 +90,7 @@ class AuthorizationsController < ApplicationController
         if disallowed_scopes.present?
           Rails.logger.error "Scope(s) #{disallowed_scopes.join(', ')} not allowed"
           redirect_to build_redirect_uri({ error: INVALID_SCOPE }), status: :found
+          return
         end
 
         if user.nil?

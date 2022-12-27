@@ -7,6 +7,10 @@ class Request < ApplicationRecord
   validates :scope, presence: true, unless: :empty_scope?
   validates :redirect_uri, presence: true
 
+  def response_type
+    query['response_type']
+  end
+
   private
 
   def empty_scope?
