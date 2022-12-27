@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-
   # Defines the root path route ("/")
   root 'base#index'
+
+  get 'authorize', to: 'authorizations#authorize'
+  post 'approve', to: 'authorizations#approve'
+  post 'token', to: 'authorizations#token'
 end

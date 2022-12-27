@@ -11,6 +11,7 @@
   * [Client Credentials Grant Type](#client-credentials-grant-type)
   * [Password Grant Type](#password-grant-type)
   * [Refresh Tokens from the Client's Perspective](#refresh-tokens-from-the-clients-perspective)
+* [Architecture](#architecture)
 * [Extensions](#extensions)
   * [Suggested Extension](#suggested-extension)
     * [Implementation](#implementation)
@@ -63,6 +64,10 @@ In the book's example, the authorization server issues refresh tokens and handle
 ### Client Scope
 
 I've modified the client's scope to include one value, `'foo'`. Otherwise, including any scope value with a request would result in disallowed scopes and an error response from the auth server or protected resource.
+
+## Architecture
+
+Because the `AuthorizationsController` in the auth server has become bloated in the preceding examples, for this and future examples, I've implemented controller services, with each service being responsible for a single controller action. These services are stored in the `/app/controller_services` directory, in the subdirectory for the relevant controller.
 
 ## Extensions
 
