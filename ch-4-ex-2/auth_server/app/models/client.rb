@@ -3,6 +3,8 @@
 class Client < ApplicationRecord
   VALID_SCOPES = %w[read write delete].freeze
 
+  has_many :requests, foreign_key: 'client_id', primary_key: 'client_id', dependent: :destroy
+
   validates :client_id, presence: true, uniqueness: true
   validates :client_secret, presence: true
   validates :redirect_uris, presence: true
