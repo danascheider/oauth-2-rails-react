@@ -2,10 +2,9 @@
 
 class AuthorizationsController < ApplicationController
   class AuthorizeService
-    def initialize(controller, query_params: {}, body_params: {})
+    def initialize(controller, query_params: {})
       @controller = controller
       @query_params = query_params
-      @body_params = body_params
     end
 
     def perform
@@ -43,7 +42,7 @@ class AuthorizationsController < ApplicationController
 
     private
 
-    attr_reader :controller, :query_params, :body_params
+    attr_reader :controller, :query_params
 
     def client
       @client ||= Client.find_by(client_id: query_params[:client_id])
