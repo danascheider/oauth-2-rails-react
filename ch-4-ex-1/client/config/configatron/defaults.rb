@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 configatron.oauth do |oauth|
   oauth.client do |client|
     client.client_id = 'oauth-client-1'
     client.client_secret = 'oauth-client-secret-1'
     client.scope = ''
-    client.redirect_uris = ['http://localhost:4000/callback']
+    client.default_redirect_uri = 'http://localhost:4000/callback'
   end
 
   oauth.auth_server do |auth_server|
