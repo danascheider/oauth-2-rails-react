@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-configatron.oauth do
-  oauth.auth_server do
+configatron.oauth do |oauth|
+  oauth.auth_server do |auth_server|
     auth_server.authorization_endpoint = 'http://localhost:4003/authorize'
     auth_server.token_endpoint = 'http://localhost:4003/token'
     auth_server.revocation_endpoint = 'http://localhost:4003/revoke'
@@ -9,14 +9,14 @@ configatron.oauth do
     auth_server.user_info_endpoint = 'http://localhost:9001/userinfo'
   end
 
-  oauth.client do
+  oauth.client do |client|
     client.client_id = 'oauth-client-1'
     client.client_secret = 'oauth-client-secret-1'
-    client.redirect_uris = ['http://localhost:4000/callback']
+    client.default_redirect_uri = 'http://localhost:4000/callback'
     client.scope = ''
   end
 
-  oauth.resource do
+  oauth.resource do |resource|
     resource.base_uri = 'http://localhost:4002/words'
   end
 end
