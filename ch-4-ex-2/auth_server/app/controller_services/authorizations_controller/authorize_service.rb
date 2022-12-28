@@ -28,7 +28,7 @@ class AuthorizationsController < ApplicationController
           return
         end
 
-        @req = Request.create!(
+        req = Request.create!(
           client:,
           reqid: SecureRandom.hex(8),
           query: query_params,
@@ -36,7 +36,7 @@ class AuthorizationsController < ApplicationController
           redirect_uri:
         )
 
-        controller.render 'authorize'
+        controller.render 'authorize', locals: { req: }
       end
     end
 
