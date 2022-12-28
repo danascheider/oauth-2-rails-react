@@ -13,11 +13,11 @@ export const getAuthorize = (redirectPage = null) => {
 //   return fetch(uri)
 // }
 
-// export const getCallback = queryString => {
-//   const uri = `${baseUri}/callback?${queryString}`
+export const getCallback = queryString => {
+  const uri = `${baseUri}/callback?${queryString}`
 
-//   return fetch(uri)
-// }
+  return fetch(uri)
+}
 
 // export const getResource = () => {
 //   const uri = `${baseUri}/fetch_resource`
