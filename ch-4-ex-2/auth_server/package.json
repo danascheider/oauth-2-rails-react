@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "latest": "^0.2.0",
+    "ruby": "^0.6.1"
+  }
+}
