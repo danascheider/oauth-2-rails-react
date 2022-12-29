@@ -75,6 +75,10 @@ GEM
     crass (1.0.6)
     date (3.3.3)
     erubi (1.12.0)
+    faraday (2.7.2)
+      faraday-net_http (>= 2.0, < 3.1)
+      ruby2_keywords (>= 0.0.4)
+    faraday-net_http (3.0.2)
     globalid (1.0.0)
       activesupport (>= 5.0)
     i18n (1.12.0)
@@ -142,6 +146,7 @@ GEM
       thor (~> 1.0)
       zeitwerk (~> 2.5)
     rake (13.0.6)
+    ruby2_keywords (0.0.5)
     thor (1.2.1)
     timeout (0.3.1)
     tzinfo (2.0.5)
@@ -158,6 +163,7 @@ DEPENDENCIES
   bootsnap
   byebug
   configatron
+  faraday
   pg (~> 1.1)
   puma (~> 5.0)
   rack-cors
