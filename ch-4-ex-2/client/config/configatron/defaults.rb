@@ -13,7 +13,7 @@ configatron.oauth do |oauth|
     client.client_id = 'oauth-client-1'
     client.client_secret = 'oauth-client-secret-1'
     client.default_redirect_uri = 'http://localhost:4000/callback'
-    client.scope = ''
+    client.scope = 'read'
   end
 
   oauth.resource do |resource|
