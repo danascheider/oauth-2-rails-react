@@ -16,6 +16,11 @@ class AuthorizationsController < ApplicationController
   end
 
   def token
-    TokenService.new(self, query_params:, body_params:).perform
+    TokenService.new(
+      self,
+      query_params:,
+      body_params:,
+      auth_header: request.headers['Authorization']
+    ).perform
   end
 end

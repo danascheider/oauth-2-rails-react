@@ -10,10 +10,11 @@ class AuthorizationsController < ApplicationController
     INVALID_GRANT = 'invalid_grant'
     INVALID_SCOPE = 'invalid_scope'
 
-    def initialize(controller, query_params:, body_params:)
+    def initialize(controller, query_params:, body_params:, auth_header: nil)
       @controller = controller
       @query_params = query_params
       @body_params = body_params
+      @auth_header = auth_header
     end
 
     def perform
@@ -37,7 +38,7 @@ class AuthorizationsController < ApplicationController
 
     private
 
-    attr_reader :controller, :query_params, :body_params, :client
+    attr_reader :controller, :query_params, :body_params, :auth_header, :client
 
     def perform_authorization_code_grant
       if authorization_code.present?
@@ -198,10 +199,10 @@ class AuthorizationsController < ApplicationController
     end
 
     def credentials_from_authorization_header
-      return if request.headers['Authorization'].blank?
+      return if auth_header.blank?
 
       Base64
-        .decode64(request.headers['Authorization'].gsub(/basic /i, ''))
+        .decode64(auth_header.gsub(/basic /i, ''))
         .split(':')
         .map {|string| CGI.unescape(string) }
     end

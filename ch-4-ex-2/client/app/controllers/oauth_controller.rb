@@ -36,7 +36,8 @@ class OauthController < ApplicationController
     form_data = {
       grant_type: 'authorization_code',
       code: query_params[:code],
-      redirect_uri:,
+      user: query_params[:user],
+      redirect_uri:
     }
 
     headers = {
@@ -53,7 +54,6 @@ class OauthController < ApplicationController
                      )
 
     if token_response.success?
-      byebug
       body = JSON.parse(token_response.body, symbolize_names: true)
 
       access_token, refresh_token, scope = body[:access_token], body[:refresh_token], body[:scope]
