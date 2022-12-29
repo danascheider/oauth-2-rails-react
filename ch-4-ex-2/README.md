@@ -1,4 +1,4 @@
-# OAuth 2.0 in Action Exercise 4-1
+# OAuth 2.0 in Action Exercise 4-2
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ There are a couple ways in which this application differs from the one in _OAuth
 
 ### Persistence
 
-First of all, data is stored in Postgres databases instead of in variables or an in-memory data store. This means that persistence and a couple other aspects of the system's function are different. For example, there is a `/token` endpoint on the client backend that enables the client to fetch the most recent access token to display on the homepage when it loads. When the application makes requests using a token, it uses the most recent token stored in the database. The client backend database is seeded with an expired access token, which has a refresh token that will work with the auth server.
+First of all, data is stored in Postgres databases instead of in variables or an in-memory data store. This means that persistence and a couple other aspects of the system's function are different. For example, there is a `/token` endpoint on the client backend that enables the client to fetch the most recent access token to display on the homepage when it loads. When the application makes requests using a token, it uses the most recent token stored in the database.
 
 ### Client Endpoints and Front-End Behaviour
 
@@ -49,21 +49,21 @@ The `AuthorizationsController#generate_token_response` method in the authorizati
 
 ### Client Credentials Grant Type
 
-In the authorization server's `#token` endpoint handler, the client is first identified using either the authorization header or post body params. (The book indicates that it could also be identified by query params, however, the code example doesn't check the query params for the client ID/secret values, so I haven't done that in this example either.) If the client does not exist, or if the secret doesn't match, an error is returned. However, later, if the body params indicate the grant type is `'client_credentials'`, the `client` variable is set again using the `client_id` from the query params. There is no error handling in the cases where (1) no client exists with the given ID, (2) no client ID is present in the query params or (3) the client secret is missing from the query params or doesn't match the client ID. I suspect this is an error, but have left it as-is in this example.
+In the authorization server's `#token` endpoint handler, the client is first identified using either the authorization header or post body params. (The book indicates that it could also be identified by query params, however, the code example doesn't check the query params for the client ID/secret values, so I haven't done that in this example either.) If the client does not exist, or if the secret doesn't match, an error is returned. However, later, if the body params indicate the grant type is `'client_credentials'`, the `client` variable is set again using the `client_id` from the query params. There is no error handling in the cases where (1) no client exists with the given ID, (2) no client ID is present in the query params or (3) the client secret is missing from the query params or doesn't match the client ID. Because the book and other documentation I've found don't indicate client authentication works differently for client credentials than other grant types, I believe this is an error. In the previous example, I left it as-is, but in this one I'm using the same method of client identification for client credentials as for other grant types.
 
 ### Password Grant Type
 
-Users are uniquely identified by `sub` value in this application, and not by `username`. `username` is not a column in the `users` table, with the closest column being `preferred_username`. The fact that this field is called "preferred" suggests to me that it may not be unique, however, the `sub` would be a unique identifier so I've used it instead (in this and other places where users are identified). It is also worth noting here that not all users have a password. In fact, of the four seeded users, only one has a password.
+Users are uniquely identified by `sub` value in this application. Unlike in exercise 4-1, there is a `username` column on the `users` table in this application, however, not all users have one, so I've used `sub` as the unique identifier in all cases rather than `username`. It is also worth noting here that not all users have a password. In fact, of the three seeded users, only one has a password.
 
 In the book, the `password` grant type does not check the request scope against the client's scope. I believe this to be in error and have changed it in this implementation so that, if the request scope is more permissive than the client scope, a 400 error is returned indicating a bad scope.
 
 ### Refresh Tokens from the Client's Perspective
 
-In the book's example, the authorization server issues refresh tokens and handles the `'refresh_token'` grant type, but the client doesn't actually use the refresh tokens. Because this functionality is implemented in the auth server, I've decided to implement it in the client backend code as well. Like the previous exercise (ex. 3-2), this client will automatically request a new access token if a request to the protected resource fails.
+In the book's example, the authorization server issues refresh tokens and handles the `'refresh_token'` grant type, but the client doesn't actually use the refresh tokens. Because this functionality is implemented in the auth server, I've decided to implement it in the client backend code as well. Like the previous exercise (ex. 4-1), this client will automatically request a new access token if a request to the protected resource fails.
 
 ### Client Scope
 
-I've modified the client's scope to include one value, `'foo'`. Otherwise, including any scope value with a request would result in disallowed scopes and an error response from the auth server or protected resource.
+I've modified the client's scope to include one value, `'read'`. Otherwise, including any scope value with a request would result in disallowed scopes and an error response from the auth server or protected resource.
 
 ## Architecture
 
