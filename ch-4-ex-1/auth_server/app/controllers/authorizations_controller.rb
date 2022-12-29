@@ -125,7 +125,6 @@ class AuthorizationsController < ApplicationController
           token_response = generate_token_response(
                                                     scope: authorization_code.scope,
                                                     nonce: authorization_code.authorization_endpoint_request['nonce'].presence,
-                                                    generate_refresh_token: true
                                                   )
 
           Rails.logger.info "Issued tokens for code '#{body_params[:code]}'"
@@ -194,7 +193,7 @@ class AuthorizationsController < ApplicationController
 
           token_response = { access_token:, token_type: 'Bearer', refresh_token: body_params[:refresh_token] }
 
-          render json: token_response, status: 200
+          render json: token_response, status: :ok
         end
       else
         Rails.logger.info 'No matching refresh token was found.'
