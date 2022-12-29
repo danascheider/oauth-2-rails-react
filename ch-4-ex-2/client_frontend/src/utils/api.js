@@ -7,11 +7,11 @@ export const getAuthorize = (redirectPage = null) => {
   return fetch(uriWithQuery)
 }
 
-// export const getToken = () => {
-//   const uri = `${baseUri}/token`
+export const getToken = () => {
+  const uri = `${baseUri}/token`
 
-//   return fetch(uri)
-// }
+  return fetch(uri)
+}
 
 export const getCallback = queryString => {
   const uri = `${baseUri}/callback?${queryString}`
