@@ -11,6 +11,7 @@
   * [Client Credentials Grant Type](#client-credentials-grant-type)
   * [Password Grant Type](#password-grant-type)
   * [Refresh Tokens from the Client's Perspective](#refresh-tokens-from-the-clients-perspective)
+  * [Client Scope](#client-scope)
 * [Extensions](#extensions)
   * [Suggested Extension](#suggested-extension)
     * [Implementation](#implementation)
@@ -22,23 +23,23 @@ There are a couple ways in which this application differs from the one in _OAuth
 
 ### Persistence
 
-First of all, data is stored in Postgres databases instead of in variables or an in-memory data store. This means that persistence and a couple other aspects of the system's function are different. For example, there is a `/token` endpoint on the client backend that enables the client to fetch the most recent access token to display on the homepage when it loads. When the application makes requests using a token, it uses the most recent token stored in the database. The client backend database is seeded with an expired access token, which has a refresh token that will work with the auth server.
+First of all, data is stored in Postgres databases instead of in variables or an in-memory data store. This means that persistence and a couple other aspects of the system's function are different. For example, there is a `/token` endpoint on the client backend that enables the client to fetch the most recent access token to display on the homepage when it loads. When the application makes requests using a token, it uses the most recent token stored in the database.
 
 ### Client Endpoints and Front-End Behaviour
 
-Because the book uses a monolith for its OAuth client application, the value of the existing access token is automatically rendered on initial page load. However, this repo uses a distributed stack, so the front end doesn't automatically know what models are in the database. Because of this, I've added the `GET /token` endpoint to the client API to enable the front end to fetch the last saved token to display initially. The client does this in a `useEffect` hook, displaying either the access token or any error returned from the endpoint. `'NONE'` is only displayed if the response from the endpoint indicates that there is no saved access token.
+Because the book uses a monolith for its OAuth client application, the value of an existing access token is automatically rendered on initial page load. However, this repo uses a distributed stack, so the front end doesn't automatically know what models are in the database. Because of this, I've added the `GET /token` endpoint to the client API to enable the front end to fetch the last saved token to display initially. The client does this in a `useEffect` hook, displaying either the access token or any error returned from the endpoint. `'NONE'` is only displayed if the response from the endpoint indicates that there is no saved access token.
 
 If you have run the setup script or seeded the client's database manually, there will be an (expired) access token already present when you initially run the app.
 
 ### Notes on Parameters in Rails
 
-The OAuth protocol is often very specific about how parameters and other data need to be passed, making use of headers, query strings, and post data. In Rails, query strings and post data are combined into a single `params` object. In general, controllers access these values agnostically. Although doing it that way would probably not cause problems in this system, to more clearly illustrate the OAuth protocol, I've separated params into query parameters (accessed with `request.query_parameters` within the controller) and body parameters (accessed with `request.request_parameters` within the controller). In cases where it truly does not matter, the default `params` hash is still used.
+The OAuth protocol is often very specific about how parameters and other data need to be passed, making use of headers, query strings, and post data. In Rails, query strings and post data are combined into a single `params` object. In general, controllers access these values agnostically. Although doing it that way would probably not cause problems in this system, to more clearly illustrate the OAuth protocol, I've separated params into query parameters (accessed with `request.query_parameters` within the controller) and body parameters (accessed with `request.request_parameters` within the controller).
 
 There is one important implication to the fact that query strings and post data are combined into a single `params` object: if the post data and query string contain the same key, one will overwrite the other since a hash can only contain a single value for each key. This prevents us from, say, raising an error when `client_id` is sent to the auth server's `/token` endpoint in both the query string and the post data the way an error is raised when the `client_id` is sent in both the `Authorization` header and the params. This is only a small issue in this application but it is worth being aware of if you decide to modify or extend the code.
 
 ### Users
 
-In the book's examples, the authorization server has a concept of users that doesn't exist in the other components (client or protected resource). It seems the authors implemented this feature only partially. Since I'm not sure what the endgame was in including users, I also have only implemented it partially. However, because the authorization server requires user to be specified in certain parameters, I've made the client backend also aware of the user `sub` value so that it can request tokens for that user.
+In the book's examples, the authorization server has a concept of users that doesn't exist in the client component. It seems the authors implemented this feature only partially. Since I'm not sure what the endgame was, I also have only implemented it partially. However, because the authorization server requires user to be specified in certain parameters, I've made the client backend also aware of the user `sub` value so that it can request tokens for that user.
 
 In particular, I've modified the query string sent to the client's callback URI to include the user's `sub` value. When the authorization code is exchanged for a token, the client then includes a `user` param with this value that the auth server can use to identify the resource owner.
 
