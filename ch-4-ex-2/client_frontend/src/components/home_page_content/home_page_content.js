@@ -1,5 +1,5 @@
-import { PropTypes } from 'prop-types'
 import { useNavigate } from 'react-router-dom'
+import PropTypes from 'prop-types'
 import { getAuthorize } from '../../utils/api'
 import ButtonLink from '../button_link/button_link'
 import Label from '../label/label'
@@ -35,7 +35,7 @@ const HomePageContent = ({ accessToken, refreshToken, scope }) => {
           <ButtonLink text='Get OAuth Token' onClick={authorize} />
         </span>
         <span>
-          <ButtonLink text='Fetch Protected Resource' onClick={accessToken ? () => navigate(paths.resource) : e => authorize(e, 'resource')} />
+          <ButtonLink text='Access the Words API' onClick={accessToken ? () => navigate(paths.words) : e => authorize(e, 'words')} />
         </span>
       </div>
     </>
