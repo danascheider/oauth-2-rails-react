@@ -3,7 +3,8 @@ import styles from './label.module.css'
 
 const COLORS = {
   blue: '#337ab7',
-  red: '#d9534f'
+  red: '#d9534f',
+  green: '#5cb85c'
 }
 
 const Label = ({ color, children }) => (
@@ -13,7 +14,7 @@ const Label = ({ color, children }) => (
 )
 
 Label.propTypes = {
-  color: PropTypes.oneOf(['blue', 'red']).isRequired,
+  color: PropTypes.oneOf(['blue', 'red', 'green']).isRequired,
   children: PropTypes.node
 }
 

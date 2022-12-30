@@ -1,0 +1,23 @@
+.root {
+  width: 70%;
+  margin: 0 auto;
+  background-color: #fff;
+  padding-top: 60px;
+}
+
+.cards {
+  display: flex;
+}
+
+.card {
+  width: 33%;
+  padding: 0 15px;
+}
+
+.card:first-child {
+  padding-left: 0;
+}
+
+.card:last-child {
+  padding-right: 0;
+}
