@@ -10,7 +10,7 @@ class ApplicationController < ActionController::Base
   end
 
   def body_params
-    request.body_parameters
+    request.request_parameters
   end
 
   def get_access_token
@@ -25,6 +25,12 @@ class ApplicationController < ActionController::Base
   end
 
   def require_access_token
-    head :unauthorized unless access_token.present?
+    if access_token.nil?
+      Rails.logger.error 'Missing access token'
+      head :unauthorized
+    elsif access_token.expired?
+      Rails.logger.error "Access token '#{access_token.token}' is expired"
+      head :unauthorized
+    end
   end
 end

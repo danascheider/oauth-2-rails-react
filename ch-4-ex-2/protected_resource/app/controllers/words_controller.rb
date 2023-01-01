@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 class WordsController < ApplicationController
+  skip_before_action :verify_authenticity_token
+
   before_action :get_access_token
   before_action :require_access_token
 
   def index
     if access_token.scope.include?('read')
-      render json: { words: Word.all, timestamp: Time.zone.now }, status: :ok
+      render json: { words: Word.all.pluck(:word), timestamp: Time.zone.now }, status: :ok
     else
       set_authentication_error('read')
       head :forbidden
@@ -33,6 +35,7 @@ class WordsController < ApplicationController
       head :no_content
     else
       set_authentication_error('delete')
+      head :forbidden
     end
   end
 
