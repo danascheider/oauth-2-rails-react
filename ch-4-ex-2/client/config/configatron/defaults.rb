@@ -13,10 +13,10 @@ configatron.oauth do |oauth|
     client.client_id = 'oauth-client-1'
     client.client_secret = 'oauth-client-secret-1'
     client.default_redirect_uri = 'http://localhost:4000/callback'
-    client.scope = 'read'
+    client.scope = 'read write delete'
   end
 
-  oauth.resource do |resource|
-    resource.base_uri = 'http://localhost:4002/words'
+  oauth.protected_resource do |protected_resource|
+    protected_resource.uri = 'http://localhost:4002/words'
   end
 end
