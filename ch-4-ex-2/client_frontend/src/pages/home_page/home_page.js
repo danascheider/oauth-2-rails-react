@@ -25,7 +25,7 @@ const HomePage = () => {
               } else {
                 setAccessToken(json.access_token)
                 setRefreshToken(json.refresh_token)
-                setScope(json.scope.join(' '))
+                setScope(json.scope)
               }
             })
         })

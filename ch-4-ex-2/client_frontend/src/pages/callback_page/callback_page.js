@@ -23,7 +23,7 @@ const CallbackPage = () => {
               if (resp.status >= 200 && resp.status < 300) {
                 setAccessToken(json.access_token)
                 setRefreshToken(json.refresh_token)
-                setScope(json.scope.join(' '))
+                setScope(json.scope)
               } else {
                 setError(json.error)
               }
