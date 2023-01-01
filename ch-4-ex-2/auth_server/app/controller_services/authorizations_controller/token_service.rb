@@ -30,7 +30,7 @@ class AuthorizationsController < ApplicationController
         perform_password_grant
       else
         Rails.logger.error "Unknown grant type '#{body_params[:grant_type]}'"
-        render json: { error: UNSUPPORTED_GRANT_TYPE }, status: :bad_request
+        controller.render json: { error: UNSUPPORTED_GRANT_TYPE }, status: :bad_request
       end
     rescue StandardError => e
       Rails.logger.error e.message
@@ -113,13 +113,18 @@ class AuthorizationsController < ApplicationController
 
           Rails.logger.info "Issuing access token '#{access_token}' for refresh token '#{body_params[:refresh_token]}'"
 
-          token_response = { access_token:, token_type: 'Bearer', refresh_token: body_params[:refresh_token] }
+          token_response = {
+                             access_token:,
+                             token_type: 'Bearer',
+                             refresh_token: body_params[:refresh_token],
+                             scope: refresh_token.scope.join(' ')
+                           }
 
-          render json: token_response, status: :ok
+          controller.render json: token_response, status: :ok
         end
       else
         Rails.logger.info 'No matching refresh token was found.'
-        head :unauthorized
+        controller.head :unauthorized
       end
     end
 

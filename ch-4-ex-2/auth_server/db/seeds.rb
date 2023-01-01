@@ -38,13 +38,14 @@ module Seeds
   def seed!
     seed_client!
     seed_users!
+    seed_tokens!
   end
 
   def seed_client!
     Client.find_or_create_by!(
       client_id: 'oauth-client-1',
       client_secret: 'oauth-client-secret-1',
-      redirect_uris: ['http://localhost:4000/callback', 'http://localhost:4000/resource'],
+      redirect_uris: ['http://localhost:4000/callback', 'http://localhost:4000/words'],
       scope: %w[read write delete]
     )
   end
@@ -55,6 +56,24 @@ module Seeds
     rescue ActiveRecord::RecordInvalid => e
       # If there is a duplicate, just move on to the next one
     end
+  end
+
+  def seed_tokens!
+    AccessToken.create!(
+      client: Client.first,
+      user: User.first,
+      token: 'a1d221ca205682a69ceaf0b0fad6ccefdced6e81d3fa4f169381c0c3b5a10a16',
+      scope: %w[read write delete],
+      token_type: 'Bearer',
+      expires_at: Time.now
+    )
+
+    RefreshToken.create!(
+      client: Client.first,
+      user: User.first,
+      token: 'b15b3b4bf2f10020133e805602d21178',
+      scope: %w[read write delete]
+    )
   end
 end
 
