@@ -10,15 +10,15 @@ class OauthController < ApplicationController
       redirect_uri: configatron.oauth.client.default_redirect_uri,
     }
 
-    authorize_url = URI.parse(configatron.oauth.auth_server.authorization_endpoint)
-    uri_query = CGI.parse(authorize_url.query || '').merge(data)
+    auth_url = URI.parse(configatron.oauth.auth_server.authorization_endpoint)
+    uri_query = CGI.parse(auth_url.query || '').merge(data)
     uri_query['scope'] = configatron.oauth.client.scope
-    authorize_url.query = URI.encode_www_form(uri_query)
+    auth_url.query = URI.encode_www_form(uri_query)
 
     AuthorizationRequest.create!(data.except(:client_id, :scope))
 
     Rails.logger.debug "Redirecting to #{authorize_url}"
-    redirect_to authorize_url.to_s, status: :found
+    redirect_to auth_url.to_s, status: :found
   end
 
   def callback
