@@ -1,4 +1,5 @@
 const baseUri = 'http://localhost:4001'
+const wordsUri = `${baseUri}/words`
 
 export const getAuthorize = (redirectPage = null) => {
   const uri = `${baseUri}/authorize`
@@ -19,8 +20,14 @@ export const getCallback = queryString => {
   return fetch(uri)
 }
 
-// export const getResource = () => {
-//   const uri = `${baseUri}/fetch_resource`
+export const getWords = () => fetch(wordsUri)
 
-//   return fetch(uri)
-// }
+export const addWord = word => {
+  const body = JSON.stringify({ word })
+  const headers = {
+    'Content-Type': 'application/json'
+  }
+  return fetch(wordsUri, { method: 'POST', body, headers })
+}
+
+export const deleteWord = () => fetch(wordsUri, { method: 'DELETE' })
