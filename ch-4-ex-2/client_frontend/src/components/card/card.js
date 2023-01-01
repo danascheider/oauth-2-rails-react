@@ -7,7 +7,7 @@ const Card = ({ header, status, children }) => {
     <div className={styles.root}>
       <div className={styles.contents}>
         <h2 className={styles.header}>{header}</h2>
-        {status && <Label color={status === 'Success' ? 'green' : 'red'}>{status}</Label>}
+        {status && <div className={styles.status}><Label color={status === 'Success' ? 'green' : 'red'}>{status}</Label></div>}
         {children}
       </div>
     </div>
