@@ -14,10 +14,10 @@ class ResourcesController < ApplicationController
         'Authorization' => "Bearer #{token&.access_token}"
       }
 
-      response = Faraday.get(configatron.oauth.resource.endpoint, nil, headers)
+      resp = Faraday.get(configatron.oauth.resource.endpoint, nil, headers)
 
-      if response.success?
-        resource = JSON.parse(response.body)
+      if resp.success?
+        resource = JSON.parse(resp.body)
 
         render json: { resource: }, status: :ok
       else
@@ -27,7 +27,7 @@ class ResourcesController < ApplicationController
         if refresh_token.present?
           refresh_access_token(refresh_token)
         else
-          render json: { error: "Server returned status #{response.status}" }, status: response.status
+          render json: { error: "Server returned status #{response.status}" }, status: resp.status
         end
       end
     else
