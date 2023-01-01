@@ -11,6 +11,7 @@
   * [Client Credentials Grant Type](#client-credentials-grant-type)
   * [Password Grant Type](#password-grant-type)
   * [Refresh Tokens from the Client's Perspective](#refresh-tokens-from-the-clients-perspective)
+  * [Client Routes for Protected Resource](#client-routes-for-protected-resource)
 * [Architecture](#architecture)
 * [Extensions](#extensions)
   * [Suggested Extension](#suggested-extension)
@@ -61,9 +62,21 @@ In the book, the `password` grant type does not check the request scope against 
 
 In the book's example, the authorization server issues refresh tokens and handles the `'refresh_token'` grant type, but the client doesn't actually use the refresh tokens. Because this functionality is implemented in the auth server, I've decided to implement it in the client backend code as well. Like the previous exercise (ex. 4-1), this client will automatically request a new access token if a request to the protected resource fails.
 
-### Client Scope
+### Client Routes for Protected Resource
 
-I've modified the client's scope to include one value, `'read'`. Otherwise, including any scope value with a request would result in disallowed scopes and an error response from the auth server or protected resource.
+In the book's example, the client has a `/words` route that renders the `words` page. It then has three `GET` routes:
+
+* `GET /get_words` - retrieves words from the protected resource API
+* `GET /add_word` - adds a word (makes a `POST` request to the protected resource)
+* `GET /delete_word` - deletes the last word from the database (makes a `DELETE` request to the protected resource)
+
+`/words` is the most RESTful name for all of these routes but it makes sense not to use it in the book's example since that route is used to render the page. However, since the client backend is a pure API in our case, the front end can have its own `/words` route to render the page that then makes requests to a `/words` route on the backend with actions differentiated by HTTP method. For that reason, the client backend in this example has the following routes:
+
+* `GET /words` - retrieves the words from the protected resource API
+* `POST /words` - adds a word
+* `DELETE /words` - deletes the last word from the database
+
+Note that these routes directly correspond to the protected resource's own routes.
 
 ## Architecture
 
