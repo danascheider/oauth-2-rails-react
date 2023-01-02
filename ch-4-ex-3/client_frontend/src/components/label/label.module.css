@@ -1,0 +1,11 @@
+.root {
+  background-color: var(--background-color);
+  color: #fff;
+  display: inline-block;
+  border-radius: 3px;
+  font-size: 75%;
+  font-weight: 700;
+  text-align: center;
+  vertical-align: baseline;
+  padding: 0.2em 0.6em 0.3em;
+}
