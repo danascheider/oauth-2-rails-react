@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+cd client
+bundle exec rails log:clear
+
+cd ../auth_server
+bundle exec rails log:clear
+
+cd ../protected_resource
+bundle exec rails log:clear
+
+cd ..

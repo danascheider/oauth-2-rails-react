@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+./script/install_deps
+./script/setup_dbs

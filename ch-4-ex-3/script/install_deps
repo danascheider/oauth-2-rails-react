@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+cd auth_server
+gem install bundler
+bundle install
+
+cd ../client
+gem install bundler
+bundle install
+
+cd ../protected_resource
+gem install bundler
+bundle install
+
+cd ../client_frontend
+yarn
+
+cd ..
