@@ -4,9 +4,6 @@ configatron.oauth do |oauth|
   oauth.auth_server do |auth_server|
     auth_server.authorization_endpoint = 'http://localhost:4003/authorize'
     auth_server.token_endpoint = 'http://localhost:4003/token'
-    auth_server.revocation_endpoint = 'http://localhost:4003/revoke'
-    auth_server.registration_endpoint = 'http://localhost:4003/register'
-    auth_server.user_info_endpoint = 'http://localhost:9001/userinfo'
   end
 
   oauth.client do |client|

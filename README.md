@@ -46,13 +46,13 @@ Where applicable, I have added functionality "left as an exercise for the reader
 Each of the systems included here requires the following software be installed on your system:
 
 * PostgreSQL (I'm running 14.2.1)
-* Ruby 3.1.2
+* Ruby 3.2.0
 * Node.js 18.10.0
 * Yarn 1.22.19
 
 It is recommended to use [asdf](https://asdf-vm.com) to manage versions of Ruby, Node, and Yarn in the event you need other versions installed on your system. If you use asdf, it will automatically detect which dependency versions to use based on the `.tool-versions` file included in each directory. You will need the `ruby`, `nodejs`, and `yarn` asdf plugins before this will work.
 
-These examples were developed on a MacBook Pro with an M1 chip running OS X Monterey v. 12.5.
+These examples were developed on a MacBook Pro with an M1 chip running OS X Monterey v. 12.6.
 
 ### Dependencies
 

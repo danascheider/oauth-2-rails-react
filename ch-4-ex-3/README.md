@@ -1,4 +1,4 @@
-# OAuth 2.0 in Action Exercise 4-2
+# OAuth 2.0 in Action Exercise 4-3
 
 ## Table of Contents
 
