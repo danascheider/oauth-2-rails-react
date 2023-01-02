@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import styles from './color_button.module.css'
 
 const COLOR_SCHEMES = {
@@ -28,6 +29,12 @@ const ColorButton = ({ colorScheme, text, onClick }) => {
       {text}
     </a>
   )
+}
+
+ColorButton.propTypes = {
+  colorScheme: PropTypes.oneOf(['teal', 'yellow', 'red']).isRequired,
+  text: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired
 }
 
 export default ColorButton
