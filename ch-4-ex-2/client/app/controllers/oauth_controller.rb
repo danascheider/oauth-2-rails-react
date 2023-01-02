@@ -28,7 +28,7 @@ class OauthController < ApplicationController
     end
 
     if authorization_request.nil?
-      console.error "State value #{query_params[:state]} did not match an existing authorization request"
+      Rails.logger.error "State value #{query_params[:state]} did not match an existing authorization request"
       render json: { error: 'State value did not match' }, status: :forbidden
       return
     end

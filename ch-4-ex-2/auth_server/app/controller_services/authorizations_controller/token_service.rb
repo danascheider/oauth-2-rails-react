@@ -226,7 +226,7 @@ class AuthorizationsController < ApplicationController
 
       Rails.logger.info "Issuing access token '#{access_token}' for client '#{client.client_id}' and user '#{user.sub}' with scope '#{scope.join(' ')}'"
 
-      refresh_token = RefreshToken.for_client_and_user(client, user).last&.token
+      refresh_token = RefreshToken.for_client_and_user(client, user)&.token
 
       # By default, a refresh token will be generated only if one doesn't exist. This behaviour
       # can be overridden, forcing a new refresh token to be created, if the `generate_refresh_token`

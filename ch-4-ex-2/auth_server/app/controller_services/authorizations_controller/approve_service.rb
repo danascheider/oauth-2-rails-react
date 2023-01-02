@@ -96,8 +96,9 @@ class AuthorizationsController < ApplicationController
 
     def request_scope
       @request_scope ||= body_params
-                           .keys
-                           .filter_map {|key| key.to_s.gsub('scope_', '') if key.to_s.start_with?('scope_') }
+                           .to_a
+                           .map {|arr| arr.first.to_s.gsub('scope_', '') if arr.first.to_s.start_with?('scope_') && arr.last.to_i > 0 }
+                           .compact
     end
 
     def disallowed_scopes
