@@ -84,8 +84,6 @@ class OauthController < ApplicationController
   end
 
   def redirect_uri
-    return configatron.oauth.client.default_redirect_uri unless query_params.key?(:redirect_page)
-
-    "http://localhost:4000/#{query_params[:redirect_page]}"
+    configatron.oauth.client.default_redirect_uri
   end
 end

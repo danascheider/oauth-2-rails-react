@@ -1,11 +1,10 @@
 const baseUri = 'http://localhost:4001'
 const wordsUri = `${baseUri}/words`
 
-export const getAuthorize = (redirectPage = null) => {
+export const getAuthorize = () => {
   const uri = `${baseUri}/authorize`
-  const uriWithQuery = redirectPage ? `${uri}?redirect_page=${redirectPage}` : uri
 
-  return fetch(uriWithQuery)
+  return fetch(uri)
 }
 
 export const getToken = () => {
