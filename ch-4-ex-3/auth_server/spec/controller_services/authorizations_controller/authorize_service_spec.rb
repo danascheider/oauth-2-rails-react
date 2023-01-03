@@ -61,7 +61,7 @@ RSpec.describe AuthorizationsController::AuthorizeService do
           perform
           expect(controller)
             .to have_received(:redirect_to)
-                  .with('https://example.com/callback?error=invalid_scope', status: :found)
+                  .with('https://example.com/callback?error=invalid_scope', status: :found, allow_other_host: true)
         end
 
         it "doesn't create a request object" do
