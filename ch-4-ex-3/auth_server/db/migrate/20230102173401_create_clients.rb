@@ -8,6 +8,8 @@ class CreateClients < ActiveRecord::Migration[7.0]
       t.string :scope, array: true, null: false, default: []
       t.string :redirect_uris, array: true, null: false
 
+      t.index :client_id, unique: true
+
       t.timestamps
     end
   end
