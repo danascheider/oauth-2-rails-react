@@ -36,13 +36,33 @@ RSpec.describe AuthorizationsController::AuthorizeService do
     end
 
     context 'when there is an invalid redirect URI' do
-      # before do
-      #   allow(Rails.logger).to receive(:error)
-      # end
+      let!(:client) { create(:client, redirect_uris: ['https://example.com/callback']) }
+      let(:query_params) do
+        {
+          client_id: client.client_id,
+          redirect_uri: 'https://example.net/callback',
+          scope: 'fruit veggies'
+        }
+      end
 
-      it 'logs an error'
+      before do
+        allow(Rails.logger).to receive(:error)
+        allow(controller).to receive(:render)
+      end
 
-      it 'returns an error'
+      it 'logs an error' do
+        perform
+        expect(Rails.logger)
+          .to have_received(:error)
+                .with("Mismatched redirect URI, expected https://example.com/callback, got 'https://example.net/callback'")
+      end
+
+      it 'renders the error page' do
+        perform
+        expect(controller)
+          .to have_received(:render)
+                .with('error', locals: { error: 'Invalid redirect URI' })
+      end
     end
     # Context: When the client exists and the redirect URI is valid
     #   Context: With only valid scopes
