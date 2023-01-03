@@ -14,10 +14,35 @@ class AuthorizationsController < ApplicationController
         return
       end
 
-      if client.redirect_uris.exclude?(redirect_uri)
+      if client.redirect_uris.exclude?(query_params[:redirect_uri])
         Rails.logger.error "Mismatched redirect URI, expected #{client.redirect_uris.join(',')}, got '#{query_params[:redirect_uri]}'"
         controller.render 'error', locals: { error: 'Invalid redirect URI' }
+        return
       end
+
+      if disallowed_scopes.any?
+        Rails.logger.error "Invalid scope(s) #{disallowed_scopes.join(',')}"
+
+        redirect_uri = URI.parse(query_params[:redirect_uri])
+        query = CGI.parse(redirect_uri.query || '')
+        query['error'] = AuthorizationsController::INVALID_SCOPE
+        redirect_uri.query = URI.encode_www_form(query)
+
+        controller.redirect_to redirect_uri.to_s, status: :found
+        return
+      end
+
+      reqid = SecureRandom.hex(8)
+
+      req = Request.create!(
+        client:,
+        reqid:,
+        redirect_uri: query_params[:redirect_uri],
+        query: query_params.to_json,
+        scope: query_params[:scope]&.split(' '),
+      )
+
+      controller.render 'authorize', locals: { client:, req: }
     end
 
     private
@@ -28,8 +53,12 @@ class AuthorizationsController < ApplicationController
       @client ||= Client.find_by(client_id: query_params[:client_id])
     end
 
-    def redirect_uri
-      @redirect_uri ||= URI.parse(query_params[:redirect_uri])
+    def request_scope
+      query_params[:scope].split(' ')
+    end
+
+    def disallowed_scopes
+      request_scope - client.scope
     end
   end
 end
