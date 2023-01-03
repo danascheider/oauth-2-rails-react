@@ -7,8 +7,8 @@ class CreateRequests < ActiveRecord::Migration[7.0]
                    null: false,
                    type: :string,
                    foreign_key: {
-                    to_table: :clients,
-                    primary_key: :client_id
+                     to_table: :clients,
+                     primary_key: :client_id
                    }
 
       t.string :reqid, null: false
