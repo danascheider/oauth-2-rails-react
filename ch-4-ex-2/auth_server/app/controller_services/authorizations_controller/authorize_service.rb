@@ -24,7 +24,7 @@ class AuthorizationsController < ApplicationController
           query['error'] = AuthorizationsController::INVALID_SCOPE
           redirect_uri.query = URI.encode_www_form(query)
 
-          controller.redirect_to redirect_uri, status: :found
+          controller.redirect_to redirect_uri, status: :found, allow_other_host: true
           return
         end
 
