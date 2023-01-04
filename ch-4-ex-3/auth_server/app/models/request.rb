@@ -11,6 +11,10 @@ class Request < ApplicationRecord
     query['state']
   end
 
+  def response_type
+    query['response_type']
+  end
+
   private
 
   def empty_scope?

@@ -44,4 +44,12 @@ RSpec.describe Request, type: :model do
       expect(req.state).to eq 'foobar'
     end
   end
+
+  describe '#response_type' do
+    let(:req) { create(:request, query: { 'response_type' => 'code' }) }
+
+    it 'returns the response type value from the query string' do
+      expect(req.response_type).to eq 'code'
+    end
+  end
 end
