@@ -12,6 +12,7 @@ class AuthorizationsController < ApplicationController
   end
 
   def approve
+    ApproveService.new(self, body_params:).perform
   end
 
   def token

@@ -3,10 +3,22 @@
 require 'rails_helper'
 
 RSpec.describe 'AuthorizationsController#approve', type: :request do
-  subject(:approve) { post approve_url, params: body_params.to_json }
+  subject(:approve) { post approve_url, params: body_params }
+
+  let!(:client) { create(:client) }
 
   context 'when there is a matching request' do
-    let(:req) { create(:request) }
+    let!(:req) do
+      create(
+        :request,
+        client:,
+        reqid: 'foobar',
+        query: { 'state' => state, 'response_type' => response_type }
+      )
+    end
+
+    let(:state) { nil }
+    let(:response_type) { nil }
 
     context 'when authorization is approved' do
       context 'when the response_type is "code"' do
@@ -29,13 +41,32 @@ RSpec.describe 'AuthorizationsController#approve', type: :request do
         context 'when disallowed scopes are present'
       end
 
-      context 'when there is a different response type'
+      context 'when there is a different response type' do
+        let(:response_type) { 'foo' }
+
+        let(:body_params) do
+          {
+            reqid: 'foobar',
+            client_id: client.client_id,
+            user: 'doesntmatter',
+            scope_fruit: '1',
+            scope_veggies: '1',
+            approve: true
+          }
+        end
+
+        it 'redirects with an error' do
+          approve
+          expect(response).to redirect_to "#{req.redirect_uri}?error=unsupported_response_type"
+        end
+      end
     end
 
     context 'when authorization is denied' do
       let(:body_params) do
         {
-          reqid: req.reqid,
+          reqid: 'foobar',
+          client_id: client.client_id,
           user: 'doesntmatter',
           scope_fruit: '1',
           scope_veggies: '1'
