@@ -35,17 +35,13 @@ RSpec.describe Request, type: :model do
       req.validate
       expect(req.errors[:redirect_uri]).to include "can't be blank"
     end
+  end
 
-    it 'is valid without a state' do
-      req.state = nil
-      expect(req).to be_valid
-    end
+  describe '#state' do
+    let(:req) { create(:request, query: { 'state' => 'foobar' }) }
 
-    it 'is invalid with a duplicate state' do
-      create(:request, state: 'foobar')
-      req.state = 'foobar'
-      req.validate
-      expect(req.errors[:state]).to include 'has already been taken'
+    it 'returns the state value from the query string' do
+      expect(req.state).to eq 'foobar'
     end
   end
 end
