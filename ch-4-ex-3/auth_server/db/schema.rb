@@ -10,9 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_04_174237) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_05_163640) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "authorization_codes", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "client_id", null: false
+    t.string "code", null: false
+    t.string "scope", default: [], null: false, array: true
+    t.json "authorization_endpoint_request"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_authorization_codes_on_client_id"
+    t.index ["code"], name: "index_authorization_codes_on_code", unique: true
+    t.index ["user_id"], name: "index_authorization_codes_on_user_id"
+  end
 
   create_table "clients", force: :cascade do |t|
     t.string "client_id", null: false
@@ -51,5 +64,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_04_174237) do
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
+  add_foreign_key "authorization_codes", "clients", primary_key: "client_id"
+  add_foreign_key "authorization_codes", "users"
   add_foreign_key "requests", "clients", primary_key: "client_id"
 end
