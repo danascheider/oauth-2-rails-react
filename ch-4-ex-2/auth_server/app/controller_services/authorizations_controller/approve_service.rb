@@ -32,7 +32,7 @@ class AuthorizationsController < ApplicationController
             client:,
             code:,
             scope: request_scope,
-            authorization_endpoint_request: query_params
+            authorization_endpoint_request: req.attributes
           )
 
           uri = redirect_uri({ code: code, state: req.query['state'], user: user.sub })
