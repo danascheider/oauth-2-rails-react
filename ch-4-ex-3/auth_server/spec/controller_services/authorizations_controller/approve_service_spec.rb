@@ -23,38 +23,14 @@ RSpec.describe AuthorizationsController::ApproveService do
       let(:response_type) { nil }
 
       context 'when authorization is approved' do
-        context 'when the response_type is "code"' do
-          let(:response_type) { 'code' }
-
-          context 'when all scopes are valid'
-
-          context 'when disallowed scopes are present'
-        end
-
-        context 'when the response_type is "token"' do
-          context 'when all scopes are valid' do
-            context 'when a user has been selected' do
-              context 'when the request object has a "state" value'
-
-              context "when the request object doesn't have a 'state' value"
-            end
-
-            context 'when no user has been selected'
-          end
-
-          context 'when disallowed scopes are present'
-        end
-
-        context 'when there is a different response type' do
-          let(:response_type) { 'foo' }
-
+        context 'when disallowed scopes are present' do
           let(:body_params) do
             {
-              client_id: client.client_id,
               reqid: 'foobar',
               user: 'doesntmatter',
               scope_fruit: '1',
               scope_veggies: '0',
+              scope_dairy: '1',
               approve: true
             }
           end
@@ -66,9 +42,7 @@ RSpec.describe AuthorizationsController::ApproveService do
 
           it 'logs the error' do
             perform
-            expect(Rails.logger)
-              .to have_received(:error)
-                    .with("Unsupported response type 'foo'")
+            expect(Rails.logger).to have_received(:error).with('Invalid scope(s) dairy')
           end
 
           it 'redirects with an error' do
@@ -76,13 +50,289 @@ RSpec.describe AuthorizationsController::ApproveService do
             expect(controller)
               .to have_received(:redirect_to)
                     .with(
-                      "#{req.redirect_uri}?error=unsupported_response_type",
+                      "#{req.redirect_uri}?error=invalid_scope",
                       status: :found,
                       allow_other_host: true
                     )
           end
 
-          it 'destroys the request object'
+          it 'destroys the request object' do
+            expect { perform }.to change(Request, :count).from(1).to(0)
+          end
+        end
+
+        context 'when the response_type is "code"' do
+          let(:response_type) { 'code' }
+
+          context 'when a user has been selected' do
+            let!(:user) { create(:user) }
+            let(:code) { instance_double(AuthorizationCode, code: 'foobar') }
+
+            let(:body_params) do
+              {
+                reqid: 'foobar',
+                user: user.sub,
+                scope_fruit: '1',
+                scope_veggies: '0',
+                scope_meats: '1',
+                approve: true
+              }
+            end
+
+            before do
+              allow(controller).to receive(:redirect_to)
+              allow(SecureRandom).to receive(:hex).with(8).and_return('foobar')
+            end
+
+            context 'when the request object has a state value' do
+              let(:state) { SecureRandom.hex(8) }
+
+              it 'creates an authorization code' do
+                expect { perform }.to change(AuthorizationCode, :count).from(0).to(1)
+              end
+
+              it 'redirects successfully' do
+                perform
+                expect(controller)
+                  .to have_received(:redirect_to)
+                        .with(
+                          "#{req.redirect_uri}?code=foobar&state=#{state}",
+                          status: :found,
+                          allow_other_host: true
+                        )
+              end
+
+              it 'destroys the request object' do
+                expect { perform }.to change(Request, :count).from(1).to(0)
+              end
+            end
+
+            context 'when the request object has no state value' do
+              it 'creates an authorization code' do
+                expect { perform }.to change(AuthorizationCode, :count).from(0).to(1)
+              end
+
+              it 'redirects successfully without including state' do
+                perform
+                expect(controller)
+                  .to have_received(:redirect_to)
+                        .with(
+                          "#{req.redirect_uri}?code=foobar",
+                          status: :found,
+                          allow_other_host: true
+                        )
+              end
+
+              it 'destroys the request object' do
+                expect { perform }.to change(Request, :count).from(1).to(0)
+              end
+            end
+          end
+
+          context 'when no user has been selected' do
+            let(:response_type) { 'code' }
+
+            let(:body_params) do
+              {
+                reqid: 'foobar',
+                user: 'baz',
+                scope_fruit: '1',
+                scope_veggies: '0',
+                scope_meats: '1',
+                approve: true
+              }
+            end
+
+            before do
+              allow(Rails.logger).to receive(:error)
+              allow(controller).to receive(:render)
+            end
+
+            it 'logs the error' do
+              perform
+              expect(Rails.logger).to have_received(:error).with("Unknown user 'baz'")
+            end
+
+            it 'renders the error page' do
+              perform
+              expect(controller)
+                .to have_received(:render)
+                      .with('error', locals: { error: "Unknown user 'baz'" }, status: :internal_server_error)
+            end
+
+            it 'destroys the request object' do
+              expect { perform }.to change(Request, :count).from(1).to(0)
+            end
+          end
+        end
+
+        context 'when the response_type is "token"' do
+          let(:response_type) { 'token' }
+
+          context 'when a user has been selected' do
+            let!(:user) { create(:user) }
+
+            let(:body_params) do
+              {
+                reqid: 'foobar',
+                user: user.sub,
+                scope_fruit: '1',
+                scope_veggies: '0',
+                scope_meats: '1',
+                approve: true
+              }
+            end
+
+            before do
+              allow(controller).to receive(:redirect_to)
+            end
+
+            context 'when the request object has a "state" value' do
+              let(:state) { SecureRandom.hex(8) }
+
+              it 'includes the state in the redirect params' do
+                perform
+                expect(controller)
+                  .to have_received(:redirect_to)
+                        .with(
+                          "https://example.com/callback?access_token=#{AccessToken.last.token}&token_type=Bearer&scope=fruit+veggies&client_id=#{client.client_id}&user=#{user.sub}&refresh_token=#{RefreshToken.last.token}&state=#{state}",
+                          status: :found,
+                          allow_other_host: true
+                        )
+              end
+
+              it 'destroys the request object' do
+                expect { perform }.to change(Request, :count).from(1).to(0)
+              end
+            end
+
+            context "when the request object doesn't have a 'state' value" do
+              it "doesn't include a state param" do
+                perform
+                expect(controller)
+                  .to have_received(:redirect_to)
+                        .with(
+                          "https://example.com/callback?access_token=#{AccessToken.last.token}&token_type=Bearer&scope=fruit+veggies&client_id=#{client.client_id}&user=#{user.sub}&refresh_token=#{RefreshToken.last.token}",
+                          status: :found,
+                          allow_other_host: true
+                        )
+              end
+
+              it 'destroys the request object' do
+                expect { perform }.to change(Request, :count).from(1).to(0)
+              end
+            end
+          end
+
+          context 'when no user has been selected' do
+            let(:body_params) do
+              {
+                reqid: 'foobar',
+                user: 'baz',
+                scope_fruit: '1',
+                scope_veggies: '0',
+                scope_meats: '1',
+                approve: true
+              }
+            end
+
+            before do
+              allow(controller).to receive(:render)
+            end
+
+            it 'renders the error page' do
+              perform
+              expect(controller)
+                .to have_received(:render)
+                      .with(
+                        'error',
+                        locals: { error: "Unknown user 'baz'" },
+                        status: :internal_server_error
+                      )
+            end
+
+            it 'destroys the request object' do
+              expect { perform }.to change(Request, :count).from(1).to(0)
+            end
+          end
+        end
+
+        context 'when there is a different response type' do
+          let(:response_type) { 'foo' }
+
+          context 'when a user has been selected' do
+            let!(:user) { create(:user) }
+
+            let(:body_params) do
+              {
+                client_id: client.client_id,
+                reqid: 'foobar',
+                user: user.sub,
+                scope_fruit: '1',
+                scope_veggies: '0',
+                approve: true
+              }
+            end
+
+            before do
+              allow(Rails.logger).to receive(:error)
+              allow(controller).to receive(:redirect_to)
+            end
+
+            it 'logs the error' do
+              perform
+              expect(Rails.logger)
+                .to have_received(:error)
+                      .with("Unsupported response type 'foo'")
+            end
+
+            it 'redirects with an error' do
+              perform
+              expect(controller)
+                .to have_received(:redirect_to)
+                      .with(
+                        "#{req.redirect_uri}?error=unsupported_response_type",
+                        status: :found,
+                        allow_other_host: true
+                      )
+            end
+
+            it 'destroys the request object' do
+              expect { perform }.to change(Request, :count).from(1).to(0)
+            end
+          end
+
+          context 'when no user has been selected' do
+            let(:response_type) { 'code' }
+
+            let(:body_params) do
+              {
+                reqid: 'foobar',
+                user: 'baz',
+                scope_fruit: '1',
+                scope_veggies: '0',
+                scope_meats: '1',
+                approve: true
+              }
+            end
+
+            before do
+              allow(Rails.logger).to receive(:error)
+              allow(controller).to receive(:render)
+            end
+
+            it 'logs the error' do
+              perform
+              expect(Rails.logger).to have_received(:error).with("Unknown user 'baz'")
+            end
+
+            it 'renders the error page' do
+              perform
+              expect(controller)
+                .to have_received(:render)
+                      .with('error', locals: { error: "Unknown user 'baz'" }, status: :internal_server_error)
+            end
+          end
         end
       end
 
@@ -150,7 +400,9 @@ RSpec.describe AuthorizationsController::ApproveService do
         expect(controller).to have_received(:render).with('error', locals: { error: 'No matching authorization request' })
       end
 
-      it "doesn't create an authorization code"
+      it "doesn't create an authorization code" do
+        expect { perform }.not_to change(AuthorizationCode, :count)
+      end
     end
   end
 end
