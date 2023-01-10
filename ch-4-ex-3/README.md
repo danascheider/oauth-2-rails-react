@@ -10,6 +10,8 @@
   * [Nonce](#nonce)
   * [Client Credentials Grant Type](#client-credentials-grant-type)
   * [Password Grant Type](#password-grant-type)
+  * [Issuing Tokens](#issuing-tokens)
+  * [Refresh Tokens](#refresh-tokens)
   * [Refresh Tokens from the Client's Perspective](#refresh-tokens-from-the-clients-perspective)
   * [Client Routes for Protected Resource](#client-routes-for-protected-resource)
 * [Architecture](#architecture)
@@ -44,6 +46,8 @@ In the book's examples, the authorization server has a concept of users that doe
 
 In particular, I've modified the query string sent to the client's callback URI to include the user's `sub` value. When the authorization code is exchanged for a token, the client then includes a `user` param with this value that the auth server can use to identify the resource owner.
 
+Another case involving users is the `/approve` endpoint of the auth server. In this handler, when the `response_type` is set to `'token'`, a 500 response is returned if the user is missing. However, in the book's examples, if the `response_type` is `'code'`, there is no validation to make sure the user exists. I've changed this so the presence of a user is validated for both response types and an error returned if no user is present.
+
 ### Nonce
 
 The `AuthorizationsController#generate_token_response` method in the authorization server takes a `nonce` as an optional argument. In the `#token` endpoint, this value is passed in as the nonce associated with the `AuthorizationCode` when it was created. The book's example doesn't actually use the nonce in generating the tokens, though, nor is there a way to actually set a nonce for the authorization code model. Like users, this seems to be functionality that the authors didn't fully implement, or was intended as an extension for readers.
@@ -57,6 +61,25 @@ In the authorization server's `#token` endpoint handler, the client is first ide
 Users are uniquely identified by `sub` value in this application. Unlike in exercise 4-1, there is a `username` column on the `users` table in this application, however, not all users have one, so I've used `sub` as the unique identifier in all cases rather than `username`. It is also worth noting here that not all users have a password. In fact, of the three seeded users, only one has a password.
 
 In the book, the `password` grant type does not check the request scope against the client's scope. I believe this to be in error and have changed it in this implementation so that, if the request scope is more permissive than the client scope, a 400 error is returned indicating a bad scope.
+
+### Issuing Tokens
+
+In the book's example, access and refresh tokens are generated in the `generateTokens` function. In this implementation, this function is analogous to the `TokenHelper::generate_token_response` method. Like the function provided by the authors, this function takes a `generate_refresh_token` argument indicating whether the refresh token should be generated. However, the book doesn't account for the case where a refresh token already exists for the given client and user.
+
+To handle this case, I've decided on the following behaviour for this example:
+
+* When the `generate_refresh_token` argument is omitted or set to `false`:
+  * No refresh token is generated, regardless of the presence of an existing one
+  * If there is an existing refresh token for that client and user, and its scope matches the requested one, it is included in the hash returned from the method
+  * If there is an existing refresh token for that client and user, and its scope differs from the requested one, it is destroyed and not replaced
+* When the `generate_refresh_token` argument is set to `true`:
+  * If a refresh token exists for the given client and user, and its scope is equal to the scope requested, no new refresh token is generated and the existing one is included in the hash
+  * If a refresh token exists for the given client and user, and its scope differs from the scope requested, that token is destroyed and a new one generated
+  * If no refresh token exists for that client and user, a new one is generated and included in the hash returned
+
+### Refresh Tokens
+
+In contrast to previous examples, in this example, I've restricted refresh tokens to one per client-user combination. If I were going to do the previous examples over, I would do the same with them as well, even though the book's example doesn't do any similar validations. The reason it seemed better to me to use the validation is that, without it, a malicious user could potentially use an old refresh token with a more permissive scope to access data or perform actions they shouldn't. With the validations, old tokens must be destroyed before a new one can be created.
 
 ### Refresh Tokens from the Client's Perspective
 

@@ -40,29 +40,4 @@ RSpec.describe RefreshToken, type: :model do
       expect(refresh_token).to be_valid
     end
   end
-
-  describe 'scopes' do
-    describe '::for_client_and_user' do
-      subject(:for_client_and_user) { described_class.for_client_and_user(client:, user:) }
-
-      let!(:refresh_token) { create(:refresh_token, client:, user:) }
-      let(:client) { create(:client) }
-      let(:user) { create(:user) }
-
-      before do
-        # One with same client but different user
-        create(:refresh_token, client:)
-
-        # One with same user but different client
-        create(:refresh_token, user:)
-
-        # One with different client and user
-        create(:refresh_token)
-      end
-
-      it 'returns the refresh token for the specified client and user' do
-        expect(for_client_and_user).to eq refresh_token
-      end
-    end
-  end
 end
