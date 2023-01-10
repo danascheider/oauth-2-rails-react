@@ -8,6 +8,8 @@ class RefreshToken < ApplicationRecord
   validates :scope, presence: true, unless: :empty_scope?
   validates :user_id, uniqueness: { scope: :client_id, message: 'must be unique per client' }
 
+  scope :for_client_and_user, ->(client:, user:) { find_by(client:, user:) }
+
   private
 
   def empty_scope?
