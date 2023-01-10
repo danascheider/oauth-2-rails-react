@@ -9,6 +9,7 @@ class AccessToken < ApplicationRecord
   validates :token, presence: true, uniqueness: true
   validates :token_type, presence: true, inclusion: { in: TOKEN_TYPES }
   validates :scope, presence: true, unless: :empty_scope?
+  validates :expires_at, presence: true
 
   private
 
