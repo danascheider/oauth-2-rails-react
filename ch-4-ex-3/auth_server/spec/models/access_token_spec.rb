@@ -41,5 +41,11 @@ RSpec.describe AccessToken, type: :model do
       access_token.scope = []
       expect(access_token).to be_valid
     end
+
+    it 'is invalid without an expiration time' do
+      access_token.expires_at = nil
+      access_token.validate
+      expect(access_token.errors[:expires_at]).to include "can't be blank"
+    end
   end
 end
