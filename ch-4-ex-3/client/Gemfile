@@ -36,4 +36,7 @@ group :development, :test do
 
   # Use FactoryBot for test data
   gem "factory_bot_rails", "~> 6.2.0"
+
+  # Use Database Cleaner to wipe the database between tests
+  gem "database_cleaner-active_record", "~> 2.0.1"
 end
