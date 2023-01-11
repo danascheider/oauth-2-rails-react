@@ -67,6 +67,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_10_205528) do
   create_table "requests", force: :cascade do |t|
     t.string "client_id", null: false
     t.string "reqid", null: false
+    t.string "response_type"
     t.json "query"
     t.string "scope", default: [], null: false, array: true
     t.string "redirect_uri", null: false

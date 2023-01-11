@@ -37,6 +37,7 @@ class AuthorizationsController < ApplicationController
       req = Request.create!(
         client:,
         reqid:,
+        response_type: query_params[:response_type],
         redirect_uri: query_params[:redirect_uri],
         query: query_params.to_json,
         scope: query_params[:scope]&.split(' '),
