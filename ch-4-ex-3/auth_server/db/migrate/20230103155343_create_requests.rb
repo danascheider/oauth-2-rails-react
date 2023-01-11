@@ -12,12 +12,14 @@ class CreateRequests < ActiveRecord::Migration[7.0]
                    }
 
       t.string :reqid, null: false
+      t.string :state
       t.string :response_type
       t.json :query
       t.string :scope, array: true, null: false, default: []
       t.string :redirect_uri, null: false
 
       t.index :reqid, unique: true
+      t.index :state, unique: true
 
       t.timestamps
     end

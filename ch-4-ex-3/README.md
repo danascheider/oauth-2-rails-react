@@ -7,6 +7,7 @@
   * [Client Endpoints and Front-End Behaviour](#client-endpoints-and-front-end-behaviour)
   * [Notes on Parameters in Rails](#notes-on-parameters-in-rails)
   * [Users](#users)
+  * [Request Model](#request-model)
   * [Nonce](#nonce)
   * [Client Credentials Grant Type](#client-credentials-grant-type)
   * [Password Grant Type](#password-grant-type)
@@ -47,6 +48,10 @@ In the book's examples, the authorization server has a concept of users that doe
 In particular, I've modified the query string sent to the client's callback URI to include the user's `sub` value. When the authorization code is exchanged for a token, the client then includes a `user` param with this value that the auth server can use to identify the resource owner.
 
 Another case involving users is the `/approve` endpoint of the auth server. In this handler, when the `response_type` is set to `'token'`, a 500 response is returned if the user is missing. However, in the book's examples, if the `response_type` is `'code'`, there is no validation to make sure the user exists. I've changed this so the presence of a user is validated for both response types and an error returned if no user is present.
+
+### Request Model
+
+For this example I have diverged a bit from my earlier approach with the `Request` model. Previously, the `state` and `response_type` values were stored in a JSON object in the `query` field. However, I didn't see a good reason for this, so for this example (and probably future ones), I've decided to make these fields on the model.
 
 ### Nonce
 

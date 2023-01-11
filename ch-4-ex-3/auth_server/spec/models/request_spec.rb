@@ -35,21 +35,17 @@ RSpec.describe Request, type: :model do
       req.validate
       expect(req.errors[:redirect_uri]).to include "can't be blank"
     end
-  end
 
-  describe '#state' do
-    let(:req) { create(:request, query: { 'state' => 'foobar' }) }
-
-    it 'returns the state value from the query string' do
-      expect(req.state).to eq 'foobar'
+    it 'is invalid with a duplicate state' do
+      create(:request, state: 'foobar')
+      req.state = 'foobar'
+      req.validate
+      expect(req.errors[:state]).to include 'has already been taken'
     end
-  end
 
-  describe '#response_type' do
-    let(:req) { create(:request, query: { 'response_type' => 'code' }) }
-
-    it 'returns the response type value from the query string' do
-      expect(req.response_type).to eq 'code'
+    it 'is valid with no state' do
+      req.state = nil
+      expect(req).to be_valid
     end
   end
 end

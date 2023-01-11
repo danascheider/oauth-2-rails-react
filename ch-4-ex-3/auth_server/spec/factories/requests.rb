@@ -4,7 +4,7 @@ FactoryBot.define do
   factory :request do
     client
     reqid { SecureRandom.hex(8) }
-    query { { foo: 'bar' } }
+    response_type { 'code' }
     scope { %w[fruit veggies] }
     redirect_uri { 'https://example.com/callback' }
   end
