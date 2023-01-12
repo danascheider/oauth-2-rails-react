@@ -39,4 +39,7 @@ group :development, :test do
 
   # Use Database Cleaner to wipe the database between tests
   gem "database_cleaner-active_record", "~> 2.0.1"
+
+  # Use Webmock to mock HTTP requests in tests
+  gem "webmock", "~> 3.18.1"
 end
