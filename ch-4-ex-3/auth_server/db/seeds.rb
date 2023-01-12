@@ -32,6 +32,7 @@ module Seeds
   def seed!
     seed_client!
     seed_users!
+    seed_tokens!
   end
 
   def seed_client!
@@ -51,6 +52,24 @@ module Seeds
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.error e.message
     end
+  end
+
+  def seed_tokens!
+    AccessToken.create!(
+      client: Client.first,
+      user: User.first,
+      token: 'd8563a93b45c4400bae67c384b3f9968fcc013e3b1d180e03dc4fb3154011888',
+      token_type: 'Bearer',
+      scope: %w[fruit veggies meats],
+      expires_at: Time.now
+    )
+
+    RefreshToken.create!(
+      client: Client.first,
+      user: User.first,
+      token: '5f3a4fc620cbdb3e12a059ca83dcdb28',
+      scope: %w[fruit veggies meats]
+    )
   end
 end
 
