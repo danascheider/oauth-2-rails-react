@@ -5,3 +5,9 @@ export const getAuthorize = () => {
 
   return fetch(uri, { redirect: 'manual' })
 }
+
+export const getCallback = queryString => {
+  const uri = `${baseUri}/callback${queryString}`
+
+  return fetch(uri)
+}
