@@ -2,4 +2,5 @@
 
 Rails.application.routes.draw do
   get 'authorize', to: 'oauth#authorize'
+  get 'callback', to: 'oauth#callback'
 end
