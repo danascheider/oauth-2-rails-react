@@ -7,7 +7,7 @@ export const getAuthorize = () => {
 }
 
 export const getCallback = queryString => {
-  const uri = `${baseUri}/callback${queryString}`
+  const uri = `${baseUri}/callback?${queryString}`
 
   return fetch(uri)
 }
