@@ -55,6 +55,11 @@ module Seeds
   end
 
   def seed_tokens!
+    seed_access_token!
+    seed_refresh_token!
+  end
+
+  def seed_access_token!
     AccessToken.create!(
       client: Client.first,
       user: User.first,
@@ -63,13 +68,19 @@ module Seeds
       scope: %w[fruit veggies meats],
       expires_at: Time.now
     )
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error e.message
+  end
 
+  def seed_refresh_token!
     RefreshToken.create!(
       client: Client.first,
       user: User.first,
       token: '5f3a4fc620cbdb3e12a059ca83dcdb28',
       scope: %w[fruit veggies meats]
     )
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error e.message
   end
 end
 
