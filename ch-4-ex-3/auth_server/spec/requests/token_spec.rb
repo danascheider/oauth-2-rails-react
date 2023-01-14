@@ -36,6 +36,16 @@ RSpec.describe 'AuthorizationsController#token' do
             issue_token
             expect(Rails.logger).to have_received(:error).with("Unknown code ''")
           end
+
+          it 'returns status 400' do
+            issue_token
+            expect(response.status).to eq 400
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+          end
         end
 
         context 'when the code is not present in the database' do
@@ -233,14 +243,116 @@ RSpec.describe 'AuthorizationsController#token' do
             issue_token
             expect(Rails.logger).to have_received(:error).with("Unknown code ''")
           end
+
+          it 'returns status 400' do
+            issue_token
+            expect(response.status).to eq 400
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+          end
         end
 
-        context 'when the code is not present in the database'
+        context 'when the code is not present in the database' do
+          let(:code) { 'foo' }
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it 'logs the error' do
+            issue_token
+            expect(Rails.logger).to have_received(:error).with("Unknown code 'foo'")
+          end
+
+          it 'returns a 400 response' do
+            issue_token
+            expect(response).to be_bad_request
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+          end
+        end
 
         context 'with a valid authorization code' do
-          context 'when the client ID matches'
+          context 'when the client ID matches' do
+            let!(:authorization_code) { create(:authorization_code, client:) }
+            let(:code) { authorization_code.code }
 
-          context "when the client ID doesn't match"
+            before do
+              allow(Rails.logger).to receive(:info)
+            end
+
+            it 'logs success' do
+              issue_token
+              expect(Rails.logger).to have_received(:info).with("Issued tokens for code '#{code}'")
+            end
+
+            it 'creates an access token' do
+              expect { issue_token }.to change(AccessToken, :count).from(0).to(1)
+            end
+
+            it 'creates a refresh token' do
+              expect { issue_token }.to change(RefreshToken, :count).from(0).to(1)
+            end
+
+            it 'returns status 200' do
+              issue_token
+              expect(response).to be_successful
+            end
+
+            it 'returns the new tokens' do
+              issue_token
+              expect(JSON.parse(response.body)).to eq({
+                                                       'client_id' => client.client_id,
+                                                       'user' => authorization_code.user.sub,
+                                                       'access_token' => AccessToken.last.token,
+                                                       'refresh_token' => RefreshToken.last.token,
+                                                       'token_type' => 'Bearer',
+                                                       'scope' => authorization_code.scope.join(' ')
+                                                     })
+            end
+
+            it 'designates the tokens for the requested user', :aggregate_failures do
+              issue_token
+              expect(AccessToken.last.user).to eq authorization_code.user
+              expect(RefreshToken.last.user).to eq authorization_code.user
+            end
+          end
+
+          context "when the client ID doesn't match" do
+            let!(:authorization_code) { create(:authorization_code) }
+            let(:code) { authorization_code.code }
+
+            before do
+              allow(Rails.logger).to receive(:error)
+            end
+
+            it 'destroys the authorization code' do
+              expect { issue_token }.to change(AuthorizationCode, :count).from(1).to(0)
+            end
+
+            it 'logs the error' do
+              issue_token
+              expect(Rails.logger)
+                .to have_received(:error)
+                      .with("Client mismatch, expected '#{authorization_code.client_id}', got '#{client.client_id}'")
+            end
+
+            it 'returns a 400 status' do
+              issue_token
+              expect(response).to be_bad_request
+            end
+
+            it 'returns an error message' do
+              issue_token
+              expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+            end
+          end
         end
       end
 
