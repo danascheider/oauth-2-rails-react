@@ -20,9 +20,9 @@ RSpec.describe TokenHelper, type: :helper do
       end
     end
 
-    context 'when the user is missing' do
+    context 'when the user is invalid' do
       let(:client) { create(:client) }
-      let(:user) { nil }
+      let(:user) { 'not a user object' }
       let(:scope) { [] }
 
       it 'raises an InvalidUserError' do
