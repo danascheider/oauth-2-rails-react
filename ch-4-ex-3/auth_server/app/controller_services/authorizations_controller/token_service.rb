@@ -16,6 +16,8 @@ class AuthorizationsController < ApplicationController
         perform_authorization_code_grant
       when 'client_credentials'
         perform_client_credentials_grant
+      when 'refresh_token'
+        perform_refresh_token_grant
       else
         Rails.logger.error "Unknown grant type '#{body_params[:grant_type]}'"
         controller.render json: { error: AuthorizationsController::UNSUPPORTED_GRANT_TYPE }, status: :bad_request
@@ -64,6 +66,42 @@ class AuthorizationsController < ApplicationController
       tokens = generate_token_response(client:, scope: request_scope)
 
       controller.render json: tokens.except(:client_id), status: :ok
+    end
+
+    def perform_refresh_token_grant
+      refresh_token = RefreshToken.find_by(token: body_params[:refresh_token])
+
+      if refresh_token.nil?
+        Rails.logger.error 'No matching refresh token was found.'
+        controller.head :unauthorized
+        return
+      end
+
+      if refresh_token.client != client
+        Rails.logger.error "Invalid client using a refresh token, expected '#{refresh_token.client_id}', got '#{client.client_id}'"
+        controller.head :bad_request
+        return
+      end
+
+      access_token = SecureRandom.hex(32)
+      AccessToken.create!(
+        client:,
+        user: refresh_token.user,
+        token: access_token,
+        token_type: 'Bearer',
+        scope: refresh_token.scope,
+        expires_at: Time.zone.now + 1.minute
+      )
+
+      Rails.logger.info "Issuing access token '#{access_token}' for refresh token '#{body_params[:refresh_token]}'"
+
+      controller.render json: {
+                                access_token:,
+                                refresh_token: body_params[:refresh_token],
+                                token_type: 'Bearer',
+                                scope: refresh_token.scope.join(' ')
+                              },
+                        status: :ok
     end
 
     def request_scope

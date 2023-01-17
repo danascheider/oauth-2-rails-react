@@ -202,6 +202,88 @@ RSpec.describe AuthorizationsController::TokenService do
       end
     end
 
+    context 'when the grant type is "refresh_token"' do
+      let(:body_params) do
+        {
+          grant_type: 'refresh_token',
+          refresh_token: 'foobar'
+        }
+      end
+
+      context 'when there is a matching refresh token' do
+        let!(:refresh_token) { create(:refresh_token, token: 'foobar', client:) }
+
+        before do
+          allow(Rails.logger).to receive(:info)
+          allow(controller).to receive(:render)
+        end
+
+        it 'creates an access token' do
+          expect { perform }.to change(AccessToken, :count).from(0).to(1)
+        end
+
+        it 'logs success' do
+          perform
+          expect(Rails.logger)
+            .to have_received(:info)
+                  .with("Issuing access token '#{AccessToken.last.token}' for refresh token 'foobar'")
+        end
+
+        it 'returns the tokens' do
+          perform
+          expect(controller)
+            .to have_received(:render)
+                  .with(
+                    json: {
+                      access_token: AccessToken.last.token,
+                      refresh_token: 'foobar',
+                      token_type: 'Bearer',
+                      scope: refresh_token.scope.join(' ')
+                    },
+                    status: :ok
+                  )
+        end
+      end
+
+      context 'when no matching refresh token is found' do
+        before do
+          allow(Rails.logger).to receive(:error)
+          allow(controller).to receive(:head)
+        end
+
+        it 'logs the error' do
+          perform
+          expect(Rails.logger).to have_received(:error).with('No matching refresh token was found.')
+        end
+
+        it 'returns an unauthorized response' do
+          perform
+          expect(controller).to have_received(:head).with(:unauthorized)
+        end
+      end
+
+      context 'when the matching refresh token belongs to another client' do
+        let!(:refresh_token) { create(:refresh_token, token: 'foobar') }
+
+        before do
+          allow(Rails.logger).to receive(:error)
+          allow(controller).to receive(:head)
+        end
+
+        it 'logs the error' do
+          perform
+          expect(Rails.logger)
+            .to have_received(:error)
+                  .with("Invalid client using a refresh token, expected '#{refresh_token.client_id}', got '#{client.client_id}'")
+        end
+
+        it 'renders a 400 error' do
+          perform
+          expect(controller).to have_received(:head).with(:bad_request)
+        end
+      end
+    end
+
     context 'with an unrecognised grant type' do
       let(:body_params) { { grant_type: 'foo' } }
 
