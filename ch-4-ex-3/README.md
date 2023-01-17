@@ -61,6 +61,14 @@ The `AuthorizationsController#generate_token_response` method in the authorizati
 
 In the authorization server's `#token` endpoint handler, the client is first identified using either the authorization header or post body params. (The book indicates that it could also be identified by query params, however, the code example doesn't check the query params for the client ID/secret values, so I haven't done that in this example either.) If the client does not exist, or if the secret doesn't match, an error is returned. However, later, if the body params indicate the grant type is `'client_credentials'`, the `client` variable is set again using the `client_id` from the query params. There is no error handling in the cases where (1) no client exists with the given ID, (2) no client ID is present in the query params or (3) the client secret is missing from the query params or doesn't match the client ID. Because the book and other documentation I've found don't indicate client authentication works differently for client credentials than other grant types, I believe this is an error. In the previous example, I left it as-is, but in this one I'm using the same method of client identification for client credentials as for other grant types.
 
+It's worth noting that there is a bug in the book's example in this code path that would blow up if a client actually attempted to use this grant type:
+
+```js
+// The variable `query` is not defined. Previously, the variable `query` has been assigned to
+// a Request object, so it's possible that was intended, or it may be meant to be `req.query`.
+var client = getClient(query.clientId);
+```
+
 ### Password Grant Type
 
 Users are uniquely identified by `sub` value in this application. Unlike in exercise 4-1, there is a `username` column on the `users` table in this application, however, not all users have one, so I've used `sub` as the unique identifier in all cases rather than `username`. It is also worth noting here that not all users have a password. In fact, of the three seeded users, only one has a password.
