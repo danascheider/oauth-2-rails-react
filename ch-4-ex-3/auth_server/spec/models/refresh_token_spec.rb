@@ -40,4 +40,8 @@ RSpec.describe RefreshToken, type: :model do
       expect(refresh_token).to be_valid
     end
   end
+
+  it 'can be saved without a user' do
+    expect { create(:refresh_token, user: nil) }.not_to raise_error
+  end
 end

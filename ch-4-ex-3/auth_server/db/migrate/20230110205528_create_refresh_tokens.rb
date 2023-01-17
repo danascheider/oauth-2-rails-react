@@ -3,7 +3,7 @@
 class CreateRefreshTokens < ActiveRecord::Migration[7.0]
   def change
     create_table :refresh_tokens do |t|
-      t.references :user, null: false, foreign_key: true
+      t.references :user, foreign_key: true
       t.references :client,
                    null: false,
                    type: :string,

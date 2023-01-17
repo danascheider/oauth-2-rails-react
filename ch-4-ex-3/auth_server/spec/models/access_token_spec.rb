@@ -48,4 +48,8 @@ RSpec.describe AccessToken, type: :model do
       expect(access_token.errors[:expires_at]).to include "can't be blank"
     end
   end
+
+  it 'can be saved without a user' do
+    expect { create(:access_token, user: nil) }.not_to raise_error
+  end
 end

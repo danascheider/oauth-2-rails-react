@@ -15,7 +15,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_10_205528) do
   enable_extension "plpgsql"
 
   create_table "access_tokens", force: :cascade do |t|
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.string "client_id", null: false
     t.string "token", null: false
     t.string "token_type", default: "Bearer", null: false
@@ -52,7 +52,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_10_205528) do
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.string "client_id", null: false
     t.string "token", null: false
     t.string "scope", default: [], null: false, array: true
