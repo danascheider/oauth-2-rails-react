@@ -18,6 +18,8 @@ class AuthorizationsController < ApplicationController
         perform_client_credentials_grant
       when 'refresh_token'
         perform_refresh_token_grant
+      when 'password'
+        perform_password_grant
       else
         Rails.logger.error "Unknown grant type '#{body_params[:grant_type]}'"
         controller.render json: { error: AuthorizationsController::UNSUPPORTED_GRANT_TYPE }, status: :bad_request
@@ -102,6 +104,39 @@ class AuthorizationsController < ApplicationController
                                 scope: refresh_token.scope.join(' ')
                               },
                         status: :ok
+    end
+
+    def perform_password_grant
+      user = User.find_by(username: body_params[:username])
+
+      if user.nil?
+        Rails.logger.error "Unknown user '#{body_params[:username]}'"
+        controller.render json: { error: AuthorizationsController::INVALID_GRANT }, status: :unauthorized
+        return
+      end
+
+      Rails.logger.info "User is '#{body_params[:username]}'"
+
+      if user.password.blank?
+        Rails.logger.error 'Attempted password grant type but user has no password'
+        controller.render json: { error: AuthorizationsController::INVALID_GRANT }, status: :unauthorized
+        return
+      end
+
+      if body_params[:password] != user.password
+        Rails.logger.error "Mismatched resource owner password, expected '#{user.password}', got '#{body_params[:password]}'"
+        controller.render json: { error: AuthorizationsController::INVALID_GRANT }, status: :unauthorized
+        return
+      end
+
+      if disallowed_scopes.any?
+        Rails.logger.error "Invalid scope(s): #{disallowed_scopes.join(', ')}"
+        controller.render json: { error: AuthorizationsController::INVALID_SCOPE }, status: :bad_request
+        return
+      end
+
+      token_response = generate_token_response(client:, user:, scope: request_scope)
+      controller.render json: token_response, status: :ok
     end
 
     def request_scope

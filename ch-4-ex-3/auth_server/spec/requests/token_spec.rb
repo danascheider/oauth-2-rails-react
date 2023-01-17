@@ -300,7 +300,168 @@ RSpec.describe 'AuthorizationsController#token' do
         end
       end
 
-      context 'when the grant type is "password"'
+      context 'when the grant type is "password"' do
+        let(:params) do
+          URI.encode_www_form({
+            grant_type: 'password',
+            username: 'alice',
+            password:,
+            scope:
+          })
+        end
+
+        context 'when there is no matching user' do
+          let(:password) { 'wonderland' }
+          let(:scope) { 'fruit veggies' }
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it 'logs the error' do
+            issue_token
+            expect(Rails.logger).to have_received(:error).with("Unknown user 'alice'")
+          end
+
+          it "doesn't issue a token" do
+            expect { issue_token }.not_to change(AccessToken, :count)
+          end
+
+          it 'returns an unauthorized response' do
+            issue_token
+            expect(response).to be_unauthorized
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+          end
+        end
+
+        context 'when the password is wrong' do
+          let!(:user) { create(:user, username: 'alice', password: 'foo') }
+          let(:password) { 'wonderland' }
+          let(:scope) { 'fruit veggies' }
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it "doesn't issue a token" do
+            expect { issue_token }.not_to change(AccessToken, :count)
+          end
+
+          it 'logs the error' do
+            issue_token
+            expect(Rails.logger)
+              .to have_received(:error)
+                    .with("Mismatched resource owner password, expected 'foo', got 'wonderland'")
+          end
+
+          it 'returns a 401 response' do
+            issue_token
+            expect(response).to be_unauthorized
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+          end
+        end
+
+        context 'when the user has no password' do
+          let!(:user) { create(:user, username: 'alice', password: nil) }
+          let(:password) { nil }
+          let(:scope) { 'fruit veggies' }
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it "doesn't issue a token" do
+            expect { issue_token }.not_to change(AccessToken, :count)
+          end
+
+          it 'logs the error' do
+            issue_token
+            expect(Rails.logger)
+              .to have_received(:error)
+                    .with('Attempted password grant type but user has no password')
+          end
+
+          it 'returns status 401' do
+            issue_token
+            expect(response).to be_unauthorized
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+          end
+        end
+
+        context 'when the username and password are valid' do
+          let!(:user) { create(:user, username: 'alice', password:) }
+          let(:password) { 'wonderland' }
+
+          context 'when disallowed scopes are present' do
+            let(:scope) { 'fruit veggies meats dairy' }
+
+            before do
+              allow(Rails.logger).to receive(:error)
+            end
+
+            it "doesn't issue a token" do
+              expect { issue_token }.not_to change(AccessToken, :count)
+            end
+
+            it 'logs the error' do
+              issue_token
+              expect(Rails.logger)
+                .to have_received(:error)
+                      .with("Invalid scope(s): dairy")
+            end
+
+            it 'returns a 400 response' do
+              issue_token
+              expect(response).to be_bad_request
+            end
+
+            it 'returns an error message' do
+              issue_token
+              expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_scope' })
+            end
+          end
+
+          context 'when all scopes are valid' do
+            let(:scope) { 'fruit veggies' }
+
+            it 'issues an access token' do
+              expect { issue_token }.to change(AccessToken, :count).from(0).to(1)
+            end
+
+            it "doesn't issue a refresh token" do
+              expect { issue_token }.not_to change(RefreshToken, :count)
+            end
+
+            it 'returns a 200 response' do
+              issue_token
+              expect(response.status).to eq 200
+            end
+
+            it 'returns the token' do
+              issue_token
+              expect(JSON.parse(response.body)).to eq({
+                                                       'access_token' => AccessToken.last.token,
+                                                       'token_type' => 'Bearer',
+                                                       'scope' => 'fruit veggies',
+                                                       'client_id' => client.client_id,
+                                                       'user' => user.sub
+                                                     })
+            end
+          end
+        end
+      end
 
       context 'with an unknown grant type'
 
@@ -657,7 +818,170 @@ RSpec.describe 'AuthorizationsController#token' do
         end
       end
 
-      context 'when the grant type is "password"'
+      context 'when the grant type is "password"' do
+        let(:params) do
+          URI.encode_www_form({
+            client_id: client.client_id,
+            client_secret: client.client_secret,
+            grant_type: 'password',
+            username: 'alice',
+            password:,
+            scope:
+          })
+        end
+
+        context 'when there is no matching user' do
+          let(:password) { 'wonderland' }
+          let(:scope) { 'fruit veggies' }
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it 'logs the error' do
+            issue_token
+            expect(Rails.logger).to have_received(:error).with("Unknown user 'alice'")
+          end
+
+          it "doesn't issue a token" do
+            expect { issue_token }.not_to change(AccessToken, :count)
+          end
+
+          it 'returns an unauthorized response' do
+            issue_token
+            expect(response).to be_unauthorized
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+          end
+        end
+
+        context 'when the password is wrong' do
+          let!(:user) { create(:user, username: 'alice', password: 'foo') }
+          let(:password) { 'wonderland' }
+          let(:scope) { 'fruit veggies' }
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it "doesn't issue a token" do
+            expect { issue_token }.not_to change(AccessToken, :count)
+          end
+
+          it 'logs the error' do
+            issue_token
+            expect(Rails.logger)
+              .to have_received(:error)
+                    .with("Mismatched resource owner password, expected 'foo', got 'wonderland'")
+          end
+
+          it 'returns a 401 response' do
+            issue_token
+            expect(response).to be_unauthorized
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+          end
+        end
+
+        context 'when the user has no password' do
+          let!(:user) { create(:user, username: 'alice', password: nil) }
+          let(:password) { nil }
+          let(:scope) { 'fruit veggies' }
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it "doesn't issue a token" do
+            expect { issue_token }.not_to change(AccessToken, :count)
+          end
+
+          it 'logs the error' do
+            issue_token
+            expect(Rails.logger)
+              .to have_received(:error)
+                    .with('Attempted password grant type but user has no password')
+          end
+
+          it 'returns status 401' do
+            issue_token
+            expect(response).to be_unauthorized
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_grant' })
+          end
+        end
+
+        context 'when the username and password are valid' do
+          let!(:user) { create(:user, username: 'alice', password:) }
+          let(:password) { 'wonderland' }
+
+          context 'when disallowed scopes are present' do
+            let(:scope) { 'fruit veggies meats dairy' }
+
+            before do
+              allow(Rails.logger).to receive(:error)
+            end
+
+            it "doesn't issue a token" do
+              expect { issue_token }.not_to change(AccessToken, :count)
+            end
+
+            it 'logs the error' do
+              issue_token
+              expect(Rails.logger)
+                .to have_received(:error)
+                      .with("Invalid scope(s): dairy")
+            end
+
+            it 'returns a 400 response' do
+              issue_token
+              expect(response).to be_bad_request
+            end
+
+            it 'returns an error message' do
+              issue_token
+              expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_scope' })
+            end
+          end
+
+          context 'when all scopes are valid' do
+            let(:scope) { 'fruit veggies' }
+
+            it 'issues an access token' do
+              expect { issue_token }.to change(AccessToken, :count).from(0).to(1)
+            end
+
+            it "doesn't issue a refresh token" do
+              expect { issue_token }.not_to change(RefreshToken, :count)
+            end
+
+            it 'returns a 200 response' do
+              issue_token
+              expect(response.status).to eq 200
+            end
+
+            it 'returns the token' do
+              issue_token
+              expect(JSON.parse(response.body)).to eq({
+                                                       'access_token' => AccessToken.last.token,
+                                                       'token_type' => 'Bearer',
+                                                       'scope' => 'fruit veggies',
+                                                       'client_id' => client.client_id,
+                                                       'user' => user.sub
+                                                     })
+            end
+          end
+        end
+      end
 
       context 'with an unknown grant type'
     end

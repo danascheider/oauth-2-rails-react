@@ -71,9 +71,9 @@ var client = getClient(query.clientId);
 
 ### Password Grant Type
 
-Users are uniquely identified by `sub` value in this application. Unlike in exercise 4-1, there is a `username` column on the `users` table in this application, however, not all users have one, so I've used `sub` as the unique identifier in all cases rather than `username`. It is also worth noting here that not all users have a password. In fact, of the three seeded users, only one has a password.
+I've handled this grant type slightly differently in this exercise than in previous ones. Although not all users have usernames, I've opted to use the username as the identifier for users here, effectively requiring a user to have a username in order to use this grant type. In order to avoid a security hole where a missing or empty `:password` body param is matched to a missing or empty `password` value on the user, I've also added logic to ensure a user has a password and that it is not blank or empty before proceeding with the grant.
 
-In the book, the `password` grant type does not check the request scope against the client's scope. I believe this to be in error and have changed it in this implementation so that, if the request scope is more permissive than the client scope, a 400 error is returned indicating a bad scope.
+The book's example also doesn't check scopes in the password grant type. I assume this is in error as I don't see a reason why scopes shouldn't be validated for this grant type. In deciding on an error response, I went with a `400 Bad Request` response and an `'invalid_scope'` error message, the same as when validating scopes for the client credentials grant type.
 
 ### Issuing Tokens
 
