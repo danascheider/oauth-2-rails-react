@@ -79,6 +79,17 @@ RSpec.describe TokenHelper, type: :helper do
           context 'when the scope matches the requested scope' do
             let(:refresh_token_scope) { scope }
 
+            before do
+              allow(Rails.logger).to receive(:info)
+            end
+
+            it 'logs the refresh token' do
+              generate
+              expect(Rails.logger)
+                .to have_received(:info)
+                      .with("Found matching refresh token 'raboof' for client '#{client.client_id}' and user '#{user.sub}'")
+            end
+
             it 'uses the existing refresh token' do
               expect(generate).to eq({
                                        access_token: 'foobar',
@@ -101,6 +112,13 @@ RSpec.describe TokenHelper, type: :helper do
             it 'destroys the existing refresh token' do
               generate
               expect(RefreshToken.find_by(token: 'raboof')).to be_nil
+            end
+
+            it 'logs the new refresh token' do
+              generate
+              expect(Rails.logger)
+                .to have_received(:info)
+                      .with("Issuing refresh token '#{RefreshToken.last.token}' for client '#{client.client_id}' and user '#{user.sub}'")
             end
 
             it 'includes a new refresh token in the output' do

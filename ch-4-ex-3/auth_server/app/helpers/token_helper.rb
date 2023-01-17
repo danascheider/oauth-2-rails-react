@@ -33,7 +33,15 @@ module TokenHelper
     refresh_token = RefreshToken.find_by(client:, user:)
 
     if refresh_token&.scope == scope
-     refresh_token = refresh_token.token
+      log_message =
+        if user.present?
+          "Found matching refresh token '#{refresh_token.token}' for client '#{client.client_id}' and user '#{user.sub}'"
+        else
+          "Found matching refresh token '#{refresh_token.token}' for client '#{client.client_id}'"
+        end
+
+      Rails.logger.info log_message
+      refresh_token = refresh_token.token
     else
       refresh_token&.destroy!
       refresh_token = nil
@@ -46,6 +54,15 @@ module TokenHelper
           scope:,
           token: refresh_token
         )
+
+        log_message =
+          if user.present?
+            "Issuing refresh token '#{refresh_token}' for client '#{client.client_id}' and user '#{user.sub}'"
+          else
+            "Issuing refresh token '#{refresh_token}' for client '#{client.client_id}'"
+          end
+
+        Rails.logger.info log_message
       end
     end
 
