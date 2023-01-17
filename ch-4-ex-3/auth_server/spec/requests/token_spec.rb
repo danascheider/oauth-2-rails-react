@@ -149,7 +149,47 @@ RSpec.describe 'AuthorizationsController#token' do
         end
       end
 
-      context 'when the grant type is "client_credentials"'
+      context 'when the grant type is "client_credentials"' do
+        let(:params) do
+          URI.encode_www_form({
+            grant_type: 'client_credentials',
+            scope:
+          })
+        end
+
+        context 'with valid scopes'
+
+        context 'when there are disallowed scopes' do
+          let(:scope) { 'fruit veggies meats dairy' }
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it 'logs the error' do
+            issue_token
+            expect(Rails.logger).to have_received(:error).with('Invalid scope(s): dairy')
+          end
+
+          it "doesn't create an access token" do
+            expect { issue_token }.not_to change(AccessToken, :count)
+          end
+
+          it "doesn't create a refresh token" do
+            expect { issue_token }.not_to change(RefreshToken, :count)
+          end
+
+          it 'returns status 400' do
+            issue_token
+            expect(response.status).to eq 400
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_scope' })
+          end
+        end
+      end
 
       context 'when the grant type is "refresh_token"'
 
@@ -356,7 +396,82 @@ RSpec.describe 'AuthorizationsController#token' do
         end
       end
 
-      context 'when the grant type is "client_credentials"'
+      context 'when the grant type is "client_credentials"' do
+        let(:params) do
+          URI.encode_www_form({
+            client_id: client.client_id,
+            client_secret: client.client_secret,
+            grant_type: 'client_credentials',
+            scope:
+          })
+        end
+
+        context 'with valid scopes' do
+          let(:scope) { 'fruit veggies meats' }
+
+          before do
+            allow(Rails.logger).to receive(:info)
+          end
+
+          it 'logs success' do
+            issue_token
+            expect(Rails.logger).to have_received(:info).with("Issuing access token '#{AccessToken.last.token}' for client '#{client.client_id}' with scope 'fruit veggies meats'")
+          end
+
+          it 'issues an access token' do
+            expect { issue_token }.to change(AccessToken, :count).from(0).to(1)
+          end
+
+          it "doesn't issue a refresh token" do
+            expect { issue_token }.not_to change(RefreshToken, :count)
+          end
+
+          it 'returns the access token' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({
+                                                     'access_token' => AccessToken.last.token,
+                                                     'token_type' => 'Bearer',
+                                                     'scope' => 'fruit veggies meats'
+                                                   })
+          end
+
+          it 'returns a 200 response' do
+            issue_token
+            expect(response).to be_successful
+          end
+        end
+
+        context 'when there are disallowed scopes' do
+          let(:scope) { 'fruit veggies meats dairy' }
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it 'logs the error' do
+            issue_token
+            expect(Rails.logger).to have_received(:error).with('Invalid scope(s): dairy')
+          end
+
+          it "doesn't create an access token" do
+            expect { issue_token }.not_to change(AccessToken, :count)
+          end
+
+          it "doesn't create a refresh token" do
+            expect { issue_token }.not_to change(RefreshToken, :count)
+          end
+
+          it 'returns status 400' do
+            issue_token
+            expect(response.status).to eq 400
+          end
+
+          it 'returns an error message' do
+            issue_token
+            expect(JSON.parse(response.body)).to eq({ 'error' => 'invalid_scope' })
+          end
+        end
+      end
 
       context 'when the grant type is "refresh_token"'
 

@@ -136,6 +136,72 @@ RSpec.describe AuthorizationsController::TokenService do
       end
     end
 
+    context 'when the grant type is "client_credentials"' do
+      let(:body_params) do
+        {
+          grant_type: 'client_credentials',
+          scope:
+        }
+      end
+
+      context 'with valid scopes' do
+        let(:scope) { 'fruit veggies meats' }
+
+        before do
+          allow(Rails.logger).to receive(:info)
+          allow(controller).to receive(:render)
+        end
+
+        it 'creates an access token' do
+          expect { perform }.to change(AccessToken, :count).from(0).to(1)
+        end
+
+        it "doesn't create a refresh token" do
+          expect { perform }.not_to change(RefreshToken, :count)
+        end
+
+        it 'logs success' do
+          perform
+          expect(Rails.logger).to have_received(:info).with("Issuing access token '#{AccessToken.last.token}' for client '#{client.client_id}' with scope 'fruit veggies meats'")
+        end
+
+        it 'returns the tokens' do
+          perform
+          expect(controller)
+            .to have_received(:render)
+                  .with(
+                    json: {
+                      access_token: AccessToken.last.token,
+                      token_type: 'Bearer',
+                      scope:
+                    },
+                    status: :ok
+                  )
+        end
+      end
+
+      context 'when there are disallowed scopes' do
+        let(:scope) { 'fruit veggies meats dairy' }
+
+        before do
+          allow(Rails.logger).to receive(:error)
+          allow(controller).to receive(:render)
+        end
+
+        it 'logs the error' do
+          perform
+          expect(Rails.logger).to have_received(:error).with('Invalid scope(s): dairy')
+        end
+
+        it 'renders an error response' do
+          perform
+          expect(controller)
+            .to have_received(:render)
+                  .with(json: { error: 'invalid_scope' }, status: :bad_request)
+        end
+      end
+    end
+
     context 'with an unrecognised grant type' do
       let(:body_params) { { grant_type: 'foo' } }
 

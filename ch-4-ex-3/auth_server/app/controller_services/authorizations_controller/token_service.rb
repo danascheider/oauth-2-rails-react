@@ -14,6 +14,8 @@ class AuthorizationsController < ApplicationController
       case body_params[:grant_type]
       when 'authorization_code'
         perform_authorization_code_grant
+      when 'client_credentials'
+        perform_client_credentials_grant
       else
         Rails.logger.error "Unknown grant type '#{body_params[:grant_type]}'"
         controller.render json: { error: AuthorizationsController::UNSUPPORTED_GRANT_TYPE }, status: :bad_request
@@ -50,6 +52,26 @@ class AuthorizationsController < ApplicationController
         Rails.logger.error "Unknown code '#{body_params[:code]}'"
         controller.render json: { error: AuthorizationsController::INVALID_GRANT }, status: :bad_request
       end
+    end
+
+    def perform_client_credentials_grant
+      if disallowed_scopes.any?
+        Rails.logger.error "Invalid scope(s): #{disallowed_scopes.join(', ')}"
+        controller.render json: { error: AuthorizationsController::INVALID_SCOPE }, status: :bad_request
+        return
+      end
+
+      tokens = generate_token_response(client:, scope: request_scope)
+
+      controller.render json: tokens.except(:client_id), status: :ok
+    end
+
+    def request_scope
+      body_params[:scope]&.split(' ') || []
+    end
+
+    def disallowed_scopes
+      request_scope - client.scope
     end
   end
 end
