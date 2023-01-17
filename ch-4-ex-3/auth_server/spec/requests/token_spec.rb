@@ -463,7 +463,36 @@ RSpec.describe 'AuthorizationsController#token' do
         end
       end
 
-      context 'with an unknown grant type'
+      context 'with an unknown grant type' do
+        let(:params) do
+          URI.encode_www_form({
+            grant_type: 'something_else'
+          })
+        end
+
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it "doesn't issue a token" do
+          expect { issue_token }.not_to change(AccessToken, :count)
+        end
+
+        it 'logs the error' do
+          issue_token
+          expect(Rails.logger).to have_received(:error).with("Unknown grant type 'something_else'")
+        end
+
+        it 'returns a 400 status' do
+          issue_token
+          expect(response).to be_bad_request
+        end
+
+        it 'returns an error message' do
+          issue_token
+          expect(JSON.parse(response.body)).to eq({ 'error' => 'unsupported_grant_type' })
+        end
+      end
 
       context 'when the grant type is missing' do
         let(:params) do
@@ -983,7 +1012,67 @@ RSpec.describe 'AuthorizationsController#token' do
         end
       end
 
-      context 'with an unknown grant type'
+      context 'with an unknown grant type' do
+        let(:params) do
+          URI.encode_www_form({
+            client_id: client.client_id,
+            client_secret: client.client_secret,
+            grant_type: 'something_else'
+          })
+        end
+
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it "doesn't issue a token" do
+          expect { issue_token }.not_to change(AccessToken, :count)
+        end
+
+        it 'logs the error' do
+          issue_token
+          expect(Rails.logger).to have_received(:error).with("Unknown grant type 'something_else'")
+        end
+
+        it 'returns a 400 status' do
+          issue_token
+          expect(response).to be_bad_request
+        end
+
+        it 'returns an error message' do
+          issue_token
+          expect(JSON.parse(response.body)).to eq({ 'error' => 'unsupported_grant_type' })
+        end
+      end
+
+      context 'when the grant type is missing' do
+        let(:params) do
+          URI.encode_www_form({
+            client_id: client.client_id,
+            client_secret: client.client_secret,
+            code: 'foobar'
+          })
+        end
+
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it 'logs the error' do
+          issue_token
+          expect(Rails.logger).to have_received(:error).with("Unknown grant type ''")
+        end
+
+        it 'returns status 400' do
+          issue_token
+          expect(response).to be_bad_request
+        end
+
+        it 'returns an error message' do
+          issue_token
+          expect(JSON.parse(response.body)).to eq({ 'error' => 'unsupported_grant_type' })
+        end
+      end
     end
 
     context "when the client ID and client secret don't match" do
