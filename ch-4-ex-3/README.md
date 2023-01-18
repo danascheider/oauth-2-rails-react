@@ -14,12 +14,10 @@
   * [Issuing Tokens](#issuing-tokens)
   * [Refresh Tokens](#refresh-tokens)
   * [Refresh Tokens from the Client's Perspective](#refresh-tokens-from-the-clients-perspective)
-  * [Client Routes for Protected Resource](#client-routes-for-protected-resource)
+  * [Errors from Protected Resource](#errors-from-protected-resource)
 * [Architecture](#architecture)
 * [Extensions](#extensions)
   * [Suggested Extension](#suggested-extension)
-    * [Implementation](#implementation)
-* [Notes](#notes)
 
 ## Important Points and Surprising Behaviour
 
@@ -48,6 +46,8 @@ In the book's examples, the authorization server has a concept of users that doe
 In particular, I've modified the query string sent to the client's callback URI to include the user's `sub` value. When the authorization code is exchanged for a token, the client then includes a `user` param with this value that the auth server can use to identify the resource owner.
 
 Another case involving users is the `/approve` endpoint of the auth server. In this handler, when the `response_type` is set to `'token'`, a 500 response is returned if the user is missing. However, in the book's examples, if the `response_type` is `'code'`, there is no validation to make sure the user exists. I've changed this so the presence of a user is validated for both response types and an error returned if no user is present.
+
+In the protected resource, all users have the same permissions, so in the client's `/produce` handler, I've used the last saved access token in the database regardless of who the user is. Obviously if users had access to different data, we would need to ensure the correct user's data is requested.
 
 ### Request Model
 
@@ -98,32 +98,19 @@ In contrast to previous examples, in this example, I've restricted refresh token
 
 In the book's example, the authorization server issues refresh tokens and handles the `'refresh_token'` grant type, but the client doesn't actually use the refresh tokens. Because this functionality is implemented in the auth server, I've decided to implement it in the client backend code as well. Like the previous exercise (ex. 4-1), this client will automatically request a new access token if a request to the protected resource fails.
 
-### Client Routes for Protected Resource
+### Errors from Protected Resource
 
-In the book's example, the client has a `/words` route that renders the `words` page. It then has three `GET` routes:
+In the `ProduceController#fetch` method on the client API, when the protected resource returns a 401 response, the application attempts to refresh the access token using a saved refresh token, returning a 401 response only if this fails. When the protected resource returns any other error response, the client API's response to the front end will have a 200 status, with the body containing an error message. I chose the 200 status for two reasons:
 
-* `GET /get_words` - retrieves words from the protected resource API
-* `GET /add_word` - adds a word (makes a `POST` request to the protected resource)
-* `GET /delete_word` - deletes the last word from the database (makes a `DELETE` request to the protected resource)
-
-`/words` is the most RESTful name for all of these routes but it makes sense not to use it in the book's example since that route is used to render the page. However, since the client backend is a pure API in our case, the front end can have its own `/words` route to render the page that then makes requests to a `/words` route on the backend with actions differentiated by HTTP method. For that reason, the client backend in this example has the following routes:
-
-* `GET /words` - retrieves the words from the protected resource API
-* `POST /words` - adds a word
-* `DELETE /words` - deletes the last word from the database
-
-Note that these routes directly correspond to the protected resource's own routes.
+* The client front end doesn't rely on response status to determine how results should be populated - it gleans this from the shape of the response body
+* No error is actually occurring in the client API, which is responding normally to responses from the protected resource.
 
 ## Architecture
 
-Because the `AuthorizationsController` in the auth server has become bloated in the preceding examples, for this and future examples, I've implemented controller services, with each service being responsible for a single controller action. These services are stored in the `/app/controller_services` directory, in the subdirectory for the relevant controller.
+As with example 4-2, I have used controller services in the auth server to encapsulate logic better within the `AuthorizationsController`.
 
 ## Extensions
 
 ### Suggested Extension
 
-There is no suggested extension for this exercise. However, I have made a small change to the authorization flow: when a user visits the `/resource` page of the client front end and the token is expired or absent, they are redirected to the auth server, which sets the redirect URI to the `/resource` page. That way, users are redirected to where they originally wanted to go.
-
-## Notes
-
-The auth server's `AuthorizationsController` is extremely unwieldy in this application and I would generally use service classes to encapsulate logic better. I probably will do that in future exercises because different ways of constructing responses and identifying clients, users, etc. are making it hard to create and name all the private methods required if we don't want the entire controller to be a massive wall of code. For the present example, I stuck to the code in the book for the sake of "simplicity", but I'm not sure simplicity was the result.
+There is no suggested extension for this exercise.

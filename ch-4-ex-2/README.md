@@ -15,8 +15,6 @@
 * [Architecture](#architecture)
 * [Extensions](#extensions)
   * [Suggested Extension](#suggested-extension)
-    * [Implementation](#implementation)
-* [Notes](#notes)
 
 ## Important Points and Surprising Behaviour
 
@@ -86,8 +84,4 @@ Because the `AuthorizationsController` in the auth server has become bloated in 
 
 ### Suggested Extension
 
-There is no suggested extension for this exercise. However, I have made a small change to the authorization flow: when a user visits the `/resource` page of the client front end and the token is expired or absent, they are redirected to the auth server, which sets the redirect URI to the `/resource` page. That way, users are redirected to where they originally wanted to go.
-
-## Notes
-
-The auth server's `AuthorizationsController` is extremely unwieldy in this application and I would generally use service classes to encapsulate logic better. I probably will do that in future exercises because different ways of constructing responses and identifying clients, users, etc. are making it hard to create and name all the private methods required if we don't want the entire controller to be a massive wall of code. For the present example, I stuck to the code in the book for the sake of "simplicity", but I'm not sure simplicity was the result.
+There is no suggested extension for this exercise.
