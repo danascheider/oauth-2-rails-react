@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getProduce } from '../../utils/api'
 import Nav from '../../components/nav/nav'
+import PageBody from '../../components/page_body/page_body'
 import ErrorContent from '../../components/error_content/error_content'
 import ProducePageContent from '../../components/produce_page_content/produce_page_content'
 
@@ -37,8 +38,10 @@ const ProducePage = () => {
   return(
     <>
       <Nav />
-      {error ? <ErrorContent error={error} /> :
-      <ProducePageContent fruit={fruit} veggies={veggies} meats={meats} scope={scope} />}
+      <PageBody>
+        {error ? <ErrorContent error={error} /> :
+        <ProducePageContent fruit={fruit} veggies={veggies} meats={meats} scope={scope} />}
+      </PageBody>
     </>
   )
 }
