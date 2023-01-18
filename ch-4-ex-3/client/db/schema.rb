@@ -23,7 +23,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_12_021711) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["access_token"], name: "index_access_tokens_on_access_token", unique: true
-    t.index ["user"], name: "index_access_tokens_on_user", unique: true
   end
 
   create_table "authorization_requests", force: :cascade do |t|

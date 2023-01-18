@@ -10,7 +10,6 @@ class CreateAccessTokens < ActiveRecord::Migration[7.0]
       t.string :user, null: false
 
       t.index :access_token, unique: true
-      t.index :user, unique: true
 
       t.timestamps
     end

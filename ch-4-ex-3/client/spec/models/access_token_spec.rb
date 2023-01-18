@@ -47,12 +47,5 @@ RSpec.describe AccessToken, type: :model do
       token.validate
       expect(token.errors[:user]).to include "can't be blank"
     end
-
-    it 'is invalid with a duplicate user' do
-      create(:access_token, user: 'user')
-      token.user = 'user'
-      token.validate
-      expect(token.errors[:user]).to include 'has already been taken'
-    end
   end
 end
