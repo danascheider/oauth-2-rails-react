@@ -11,3 +11,9 @@ export const getCallback = queryString => {
 
   return fetch(uri)
 }
+
+export const getProduce = () => {
+  const uri = `${baseUri}/produce`
+
+  return fetch(uri)
+}

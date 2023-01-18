@@ -1,20 +1,14 @@
 import PropTypes from 'prop-types'
 import styles from './label.module.css'
 
-const COLORS = {
-  blue: '#337ab7',
-  red: '#d9534f',
-  green: '#5cb85c'
-}
-
 const Label = ({ color, children }) => (
-  <span className={styles.root} style={{ '--background-color': COLORS[color] }}>
+  <span className={styles.root} style={{ '--background-color': color }}>
     {children}
   </span>
 )
 
 Label.propTypes = {
-  color: PropTypes.oneOf(['blue', 'red', 'green']).isRequired,
+  color: PropTypes.string.isRequired,
   children: PropTypes.node
 }
 

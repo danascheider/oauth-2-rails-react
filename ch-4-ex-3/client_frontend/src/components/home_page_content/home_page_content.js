@@ -20,15 +20,15 @@ const HomePageContent = ({ accessToken, refreshToken, scope }) => {
     <>
       <p className={styles.text}>
         Access token value:&nbsp;
-        <Label color='red'>{accessToken || 'NONE'}</Label>
+        <Label color='#d9534f'>{accessToken || 'NONE'}</Label>
       </p>
       <p className={styles.text}>
         Scope:&nbsp;
-        <Label color='red'>{scope || 'NONE'}</Label>
+        <Label color='#d9534f'>{scope || 'NONE'}</Label>
       </p>
       <p className={styles.text}>
         Refresh token value:&nbsp;
-        <Label color='red'>{refreshToken || 'NONE'}</Label>
+        <Label color='#d9534f'>{refreshToken || 'NONE'}</Label>
       </p>
       <div className={styles.buttons}>
         <span className={styles.buttonLeft}>

@@ -1,6 +1,7 @@
 const paths = {
   home: '/',
-  callback: '/callback'
+  callback: '/callback',
+  produce: '/produce'
 }
 
 export default paths

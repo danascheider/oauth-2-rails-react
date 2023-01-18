@@ -1,0 +1,18 @@
+.header {
+  font-size: 30px;
+}
+
+.flexbox {
+  display: flex;
+}
+
+.sectionHeader {
+  font-size: 21px;
+  font-weight: 200;
+  margin-bottom: 15px;
+}
+
+.inlineHeader {
+  composes: sectionHeader;
+  display: inline;
+}

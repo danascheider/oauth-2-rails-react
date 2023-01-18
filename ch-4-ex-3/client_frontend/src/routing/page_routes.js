@@ -2,9 +2,10 @@ import { Route, Routes } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import HomePage from '../pages/home_page/home_page'
 import CallbackPage from '../pages/callback_page/callback_page'
+import ProducePage from '../pages/produce_page/produce_page'
 import paths from './paths'
 
-const pages =[
+const pages = [
   {
     pageId: 'home',
     title: 'OAuth Client Home',
@@ -18,6 +19,13 @@ const pages =[
     description: 'Example OAuth 2.0 Client Frontend',
     jsx: <CallbackPage />,
     path: paths.callback
+  },
+  {
+    pageId: 'produce',
+    title: 'OAuth Client Resource Page',
+    description: 'Example OAuth 2.0 Client Frontend',
+    jsx: <ProducePage />,
+    path: paths.produce
   }
 ]
 
