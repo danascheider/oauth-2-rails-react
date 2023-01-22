@@ -69,9 +69,7 @@ test:
     migrations_path: db/migrate
   shared:
     <<: *default
-    database: auth_server_development_4_2
-    database_tasks: false
-    replica: true
+    database: protected_resource_test_shared_4_3
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
