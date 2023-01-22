@@ -24,11 +24,11 @@ default: &default
 development:
   primary:
     <<: *default
-    database: protected_resource_development_4_2
+    database: protected_resource_development_4_3
     migrations_paths: db/migrate
   shared:
     <<: *default
-    database: auth_server_development_4_2
+    database: auth_server_development_4_3
     database_tasks: false
     replica: true
 
@@ -65,7 +65,7 @@ development:
 test:
   primary:
     <<: *default
-    database: protected_resource_test_4_2
+    database: protected_resource_test_4_3
     migrations_path: db/migrate
   shared:
     <<: *default
@@ -96,11 +96,11 @@ test:
 production:
   primary:
     <<: *default
-    database: protected_resource_production_4_2
+    database: protected_resource_production_4_3
     username: protected_resource
     password: <%= ENV['PROTECTED_RESOURCE_DATABASE_PASSWORD'] %>
   shared:
     <<: *default
-    database: auth_server_production_4_2
+    database: auth_server_production_4_3
     username: protected_resource
     password: <%= ENV['AUTH_SERVER_DATABASE_PASSWORD']
