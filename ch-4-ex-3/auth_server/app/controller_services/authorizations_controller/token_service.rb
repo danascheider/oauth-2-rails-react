@@ -101,6 +101,7 @@ class AuthorizationsController < ApplicationController
                                 access_token:,
                                 refresh_token: body_params[:refresh_token],
                                 token_type: 'Bearer',
+                                user: refresh_token.user,
                                 scope: refresh_token.scope.join(' ')
                               },
                         status: :ok
