@@ -14,6 +14,12 @@
   * [Issuing Tokens](#issuing-tokens)
   * [Refresh Tokens](#refresh-tokens)
   * [Refresh Tokens from the Client's Perspective](#refresh-tokens-from-the-clients-perspective)
+  * [Shared Database](#shared-database)
+    * [database.yml](#databaseyml)
+    * [Schemas](#schemas)
+    * [SharedModel](#sharedmodel)
+    * [New Models](#new-models)
+  * [Authenticating with the Protected Resource](#authenticating-with-the-protected-resource)
   * [Errors from Protected Resource](#errors-from-protected-resource)
 * [Architecture](#architecture)
 * [Extensions](#extensions)
@@ -47,7 +53,7 @@ In particular, I've modified the query string sent to the client's callback URI 
 
 Another case involving users is the `/approve` endpoint of the auth server. In this handler, when the `response_type` is set to `'token'`, a 500 response is returned if the user is missing. However, in the book's examples, if the `response_type` is `'code'`, there is no validation to make sure the user exists. I've changed this so the presence of a user is validated for both response types and an error returned if no user is present.
 
-In the protected resource, all users have the same permissions, so in the client's `/produce` handler, I've used the last saved access token in the database regardless of who the user is. Obviously if users had access to different data, we would need to ensure the correct user's data is requested.
+In the protected resource, all users have the same permissions, so in the client's `/produce` handler, I've used the last saved access token in the database regardless of who the user is. The protected resource is also agnostic to users, accepting any existing and un-expired token. (It also doesn't do other validations, such as verifying the client or that the access token's scopes are all among the client's scopes. Since this auth server only handles authorization for this protected resource, it's safe to assume all registered clients are able to access the resource.) Obviously if different users had access to different data, we would need to ensure the correct user's data is requested.
 
 ### Request Model
 
@@ -97,6 +103,40 @@ In contrast to previous examples, in this example, I've restricted refresh token
 ### Refresh Tokens from the Client's Perspective
 
 In the book's example, the authorization server issues refresh tokens and handles the `'refresh_token'` grant type, but the client doesn't actually use the refresh tokens. Because this functionality is implemented in the auth server, I've decided to implement it in the client backend code as well. Like the previous exercise (ex. 4-1), this client will automatically request a new access token if a request to the protected resource fails.
+
+### Shared Database
+
+The auth server shares its database with the protected resource, which only reads from that database. However, in order to facilitate testing, it was necessary to use a different approach in the test environment to enable access tokens to be seeded before request specs. This wasn't an issue in past examples because previous examples weren't tested and therefore test environment configuration was a moot point. For this reason, for this and future examples that use a shared database, the following changes have been made from previous exercises.
+
+#### database.yml
+
+Instead of using the auth server's dev database in the test environment, the protected resource in this exercise has its own database in the test environment set up to mimic that of the auth server.
+
+#### Schemas
+
+In order to prevent errors, I had to generate a schema file for the shared test database. The main database schema file is `/db/schema.rb` - this database is empty because we aren't using DB persistence for the produce items since they are just strings. The test database schema is `/db/shared_schema.rb`. This file is copied from the auth server's `schema.rb` file. In a production application, this file would have to be updated every time the auth server's schema changed, but for the sake of the example it works.
+
+#### SharedModel
+
+The abstract model `SharedModel` has had some changes as well, ensuring that the database is read-only in development and production environments but includes write access in the test environment. I dislike modifying application code to behave differently in a test environment, since it means tests will not be able to truly test the way the application actually works. However, I couldn't find an alternative other than to use raw SQL with hard-coded values to populate the access tokens in the "shared" database. I began implementing that approach but it proved onerous and error-prone. Since this is only an example, I went with making the code behave differently in tests.
+
+#### New Models
+
+In order to populate the access tokens, I needed to also create `Client` and `User` models, with the same assocations to `AccessToken` as are present in the auth server database, for the purpose of satisfying foreign key constraints. This enabled me to use FactoryBot to populate the database instead of a custom module.
+
+Note that the auth server will not create an access token with more permissive or different scopes than are available to the client. However, since this application doesn't create or destroy access tokens, it contains no such assurances. For that reason, in tests, the client's scopes may be different or more limited than those of the access token belonging to that client.
+
+### Authenticating with the Protected Resource
+
+In the book's example, the route `GET /produce` on the protected resource allows authenticating using, in order of preference:
+
+* The authorization header
+* Body params
+* Query params
+
+However, `GET` requests, at least in Rails, only support query params. I didn't become aware of this issue until now, so the code is slightly wrong in previous exercises, in that it checks for the access token in the body params before the query params. I'm not sure that this hurts anything (since it falls back to the query params anyway), but in this example I've removed the ability to use body params to authenticate. I'm not sure if not allowing body params breaks the OAuth protocol. (Note that [this tutorial](https://codeforgeek.com/handle-get-post-request-express-4/) suggests this is the same in Express.js, so it may be failing silently in the authors' example too.)
+
+Note that, if we defined the `get_access_token` method on the `ApplicationController` instead of the `ProduceController`, we could assume it might be used for other routes in the future. In that case, it would make sense to check for body params too. Here I'm treating this as a premature optimisation.
 
 ### Errors from Protected Resource
 
