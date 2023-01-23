@@ -35,7 +35,7 @@ const HomePageContent = ({ accessToken, refreshToken, scope }) => {
           <ButtonLink text='Get OAuth Token' onClick={authorize} />
         </span>
         <span>
-          <ButtonLink text='Access the Produce API' onClick={accessToken ? () => navigate(paths.words) : authorize} />
+          <ButtonLink text='Access the Produce API' onClick={accessToken ? () => navigate(paths.produce) : authorize} />
         </span>
       </div>
     </>

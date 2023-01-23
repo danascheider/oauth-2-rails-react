@@ -9,7 +9,7 @@ const ProducePage = () => {
   const [fruit, setFruit] = useState(null)
   const [veggies, setVeggies] = useState(null)
   const [meats, setMeats] = useState(null)
-  const [scope, setScope] = useState([])
+  const [scope, setScope] = useState(null)
   const [error, setError] = useState(null)
   const mountedRef = useRef(true)
 
