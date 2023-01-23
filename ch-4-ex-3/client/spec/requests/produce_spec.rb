@@ -42,7 +42,9 @@ RSpec.describe 'Produce', type: :request do
 
       it 'logs success' do
         fetch
-        expect(Rails.logger).to have_received(:info).with('Requesting produce from API')
+        expect(Rails.logger)
+          .to have_received(:info)
+                .with("Requesting produce from API with access token '#{access_token.access_token}'")
       end
 
       it 'returns a 200 response' do
@@ -93,42 +95,148 @@ RSpec.describe 'Produce', type: :request do
     end
 
     context 'when the produce API returns a 401' do
+      let!(:access_token) { create(:access_token, refresh_token: 'foobar') }
+
       let!(:resource_api_call) do
         stub_request(:get, configatron.oauth.protected_resource.uri)
           .to_return(status: 401)
       end
 
       before do
-        create(:access_token)
         allow(Rails.logger).to receive(:info)
         allow(Rails.logger).to receive(:error)
       end
 
-      it 'logs info' do
-        fetch
-        expect(Rails.logger).to have_received(:info).with('Requesting produce from API')
+      context 'when the token is successfully refreshed' do
+        let!(:successful_resource_api_call) do
+          stub_request(:get, configatron.oauth.protected_resource.uri)
+            .to_return(
+              {
+                status: 401
+              },
+              {
+                body: {
+                  fruit: %w[apple banana kiwi],
+                  veggies: %w[lettuce onion potato],
+                  meats: []
+                }.to_json,
+                status: 200
+              }
+            )
+        end
+
+        before do
+          stub_request(:post, configatron.oauth.auth_server.token_endpoint)
+            .with(body: { grant_type: 'refresh_token', refresh_token: 'foobar' })
+            .to_return(
+              body: {
+                access_token: 'raboof',
+                refresh_token: 'foobar',
+                token_type: 'Bearer',
+                user: 'ABC-123',
+                scope: 'fruit veggies',
+              }.to_json,
+              status: 200
+            )
+        end
+
+        it 'logs info twice' do
+          fetch
+          expect(Rails.logger)
+            .to have_received(:info)
+                  .twice
+                  .with(/Requesting produce from API with access token /)
+        end
+
+        it 'contacts the produce API twice' do
+          fetch
+          expect(resource_api_call).to have_been_made.twice
+        end
+
+        it 'logs the refresh attempt' do
+          fetch
+          expect(Rails.logger)
+            .to have_received(:info)
+                  .with('401 response from protected resource server, attempting to refresh token')
+        end
+
+        it 'refreshes the access token' do
+          fetch
+          expect(AccessToken.last.access_token).to eq 'raboof'
+        end
+
+        it 'deletes the old access token' do
+          fetch
+          expect { access_token.reload }.to raise_error(ActiveRecord::RecordNotFound)
+        end
+
+        it 'returns a 200 response' do
+          fetch
+          expect(response).to be_successful
+        end
+
+        it 'returns the produce corresponding to the scope' do
+          fetch
+          body = JSON.parse(response.body, symbolize_names: true)
+          expect(body)
+            .to eq({
+              produce: {
+                fruit: %w[apple banana kiwi],
+                veggies: %w[lettuce onion potato],
+                meats: []
+              },
+              scope: 'fruit veggies'
+            })
+        end
       end
 
-      it 'contacts the produce API' do
-        fetch
-        expect(resource_api_call).to have_been_made
-      end
+      context "when the token can't be refreshed" do
+        before do
+          stub_request(:post, configatron.oauth.auth_server.token_endpoint)
+            .with(body: { grant_type: 'refresh_token', refresh_token: 'foobar' })
+            .to_return(status: 401)
+        end
 
-      it 'logs the error' do
-        fetch
-        expect(Rails.logger)
-          .to have_received(:error)
-                .with('401 response from protected resource server')
-      end
+        it 'logs info' do
+          fetch
+          expect(Rails.logger)
+            .to have_received(:info)
+                  .once
+                  .with(/Requesting produce from API with access token /)
+        end
 
-      it 'returns a 401 response' do
-        fetch
-        expect(response).to be_unauthorized
-      end
+        it 'contacts the produce API' do
+          fetch
+          expect(resource_api_call).to have_been_made
+        end
 
-      it 'returns the error in the response body' do
-        fetch
-        expect(JSON.parse(response.body)).to eq({ 'error' => '401 response from protected resource server' })
+        it 'logs the refresh attempt' do
+          fetch
+          expect(Rails.logger)
+            .to have_received(:info)
+                  .with('401 response from protected resource server, attempting to refresh token')
+        end
+
+        it 'returns a 401 response' do
+          fetch
+          expect(response).to be_unauthorized
+        end
+
+        it 'logs the error' do
+          fetch
+          expect(Rails.logger)
+            .to have_received(:error)
+                  .with("Unable to refresh access token with refresh token 'foobar'")
+        end
+
+        it 'returns the error in the response body' do
+          fetch
+          expect(JSON.parse(response.body)).to eq({ 'error' => 'Unauthorized. Failed to refresh access token.' })
+        end
+
+        it 'destroys the access token' do
+          expect { fetch }.to change(AccessToken, :count).from(1).to(0)
+        end
       end
     end
 
