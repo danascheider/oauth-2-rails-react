@@ -57,7 +57,7 @@ class AuthorizationsController < ApplicationController
             client:,
             user:,
             code:,
-            scope: req.scope,
+            scope: request_scope,
             authorization_endpoint_request: req.attributes
           )
 
