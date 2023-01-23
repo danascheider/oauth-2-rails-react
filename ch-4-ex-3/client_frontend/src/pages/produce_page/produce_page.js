@@ -21,10 +21,10 @@ const ProducePage = () => {
             if (json.error) {
               setError(json.error)
             } else {
-              if (json.data?.length) {
-                setFruit(json.data.fruit)
-                setVeggies(json.data.veggies)
-                setMeats(json.data.meats)
+              if (json.produce) {
+                setFruit(json.produce.fruit)
+                setVeggies(json.produce.veggies)
+                setMeats(json.produce.meats)
               }
 
               if (json.scope) setScope(json.scope)

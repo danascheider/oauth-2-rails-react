@@ -15,7 +15,8 @@ RSpec.describe 'Produce', type: :request do
           .to_return(
             body: {
               fruit: %w[apple pear tomato],
-              veggies: %w[carrot broccoli]
+              veggies: %w[carrot broccoli],
+              meats: []
             }.to_json,
             status: 200
           )
@@ -54,8 +55,9 @@ RSpec.describe 'Produce', type: :request do
         expect(JSON.parse(response.body))
           .to eq({
             'scope' => access_token.scope.join(' '),
-            'data' => {
+            'produce' => {
               'fruit' => %w[apple pear tomato],
+              'meats' => [],
               'veggies' => %w[carrot broccoli]
             }
           })
@@ -124,9 +126,9 @@ RSpec.describe 'Produce', type: :request do
         expect(response).to be_unauthorized
       end
 
-      it 'returns an empty response body' do
+      it 'returns the error in the response body' do
         fetch
-        expect(response.body).to be_blank
+        expect(JSON.parse(response.body)).to eq({ 'error' => '401 response from protected resource server' })
       end
     end
 
