@@ -4,6 +4,7 @@
 
 .flexbox {
   display: flex;
+  align-items: center;
 }
 
 .sectionHeader {
@@ -15,4 +16,5 @@
 .inlineHeader {
   composes: sectionHeader;
   display: inline;
+  margin: 0 4px 0 0;
 }
