@@ -31,6 +31,8 @@ class ProduceController < ApplicationController
         query_params[:access_token]
       end
 
+    Rails.logger.info "Requested with token '#{token}'"
+
     @access_token = AccessToken.find_by(token:)
   end
 
