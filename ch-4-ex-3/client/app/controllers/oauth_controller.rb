@@ -62,7 +62,7 @@ class OauthController < ApplicationController
         access_token:,
         refresh_token:,
         user:,
-        scope:,
+        scope: scope.split(' '),
         token_type:
       )
 

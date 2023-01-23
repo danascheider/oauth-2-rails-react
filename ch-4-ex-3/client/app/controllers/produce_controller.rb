@@ -22,20 +22,7 @@ class ProduceController < ApplicationController
       return
     end
 
-    produce = resp.body.present? ? JSON.parse(resp.body, symbolize_names: true) : {}
-
-    if resp.success?
-      render json: { scope: access_token.scope.join(' '), produce: }, status: :ok
-    else
-      if produce.present? && produce.key?(:error)
-        Rails.logger.error "Error response #{resp.status} received from server: #{produce[:error]}"
-        render json: { error: produce[:error] }, status: :ok
-      else
-        error = "Error response #{resp.status} received from server"
-        Rails.logger.error error
-        render json: { error: }, status: :ok
-      end
-    end
+    process_token_response(resp)
   end
 
   private

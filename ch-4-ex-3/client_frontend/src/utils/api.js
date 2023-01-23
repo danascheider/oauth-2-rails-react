@@ -17,3 +17,9 @@ export const getProduce = () => {
 
   return fetch(uri)
 }
+
+export const getToken = () => {
+  const uri = `${baseUri}/tokens`
+
+  return fetch(uri)
+}
