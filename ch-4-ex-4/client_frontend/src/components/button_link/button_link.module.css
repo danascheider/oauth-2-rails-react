@@ -1,0 +1,20 @@
+.root {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #333;
+  text-decoration: none;
+}
+
+.root:hover {
+  background-color: #eee;
+}
