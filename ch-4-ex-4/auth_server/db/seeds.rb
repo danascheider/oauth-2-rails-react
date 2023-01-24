@@ -1,9 +1,22 @@
 # frozen_string_literal: true
 
-# This file should contain all the record creation needed to seed the database with its default values.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Examples:
-#
-#   movies = Movie.create([{ name: "Star Wars" }, { name: "Lord of the Rings" }])
-#   Character.create(name: "Luke", movie: movies.first)
+module Seeds
+  module_function
+
+  def seed!
+    seed_client!
+  end
+
+  def seed_client!
+    client = Client.new(
+      client_id: 'oauth-client-1',
+      client_secret: 'oauth-client-secret-1',
+      scope: %w[foods movies music],
+      redirect_uris: ['http://localhost:4000/callback']
+    )
+
+    Rails.logger.error client.errors.full_messages unless client.save
+  end
+end
+
+Seeds.seed!
