@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_24_083420) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_24_211030) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -24,6 +24,15 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_24_083420) do
     t.datetime "updated_at", null: false
     t.index ["access_token"], name: "index_access_tokens_on_access_token", unique: true
     t.index ["refresh_token"], name: "index_access_tokens_on_refresh_token", unique: true
+  end
+
+  create_table "authorization_requests", force: :cascade do |t|
+    t.string "state", null: false
+    t.string "response_type", null: false
+    t.string "redirect_uri", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["state"], name: "index_authorization_requests_on_state", unique: true
   end
 
 end
