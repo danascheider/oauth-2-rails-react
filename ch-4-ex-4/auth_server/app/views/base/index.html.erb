@@ -1,0 +1,34 @@
+<h2 class='content-header'>Client Information</h2>
+
+<% @clients.each do |client| %>
+<h3><code><%= client.client_id %></code></h3>
+<ul>
+  <li>
+    <strong>client_secret:</strong> <code><%= client.client_secret %></code>
+  </li>
+  <li>
+    <strong>scope:</strong> <code><%= client.scope.join(' ') %></code>
+  </li>
+  <li>
+    <strong>redirect_uris:</strong>
+    <% client.redirect_uris.each_with_index do |uri, index| %>
+      <% if index == client.redirect_uris.length - 1 %>
+        <code class='inline-code-block'><%= uri %></code>
+      <% else %>
+        <code class='inline-code-block'><%= uri %></code>,&nbsp;
+      <% end %>
+    <% end %>
+  </li>
+</ul>
+<% end %>
+
+<h2 class='content-header'>Server Information</h2>
+
+<ul>
+  <li>
+    <strong>authorization_endpoint:</strong> <code>http://localhost:4004/authorize</code>
+  </li>
+  <li>
+    <strong>token_endpoint:</strong> <code>http://localhost:4004/token</code>
+  </li>
+</ul>

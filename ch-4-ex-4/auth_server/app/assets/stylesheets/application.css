@@ -169,3 +169,7 @@ li:last-child {
 .content-large {
   font-size: 21px;
 }
+
+.inline-code-block {
+  display: inline;
+}
