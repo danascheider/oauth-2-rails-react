@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_25_224857) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_26_200747) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -36,6 +36,20 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_25_224857) do
     t.index ["client_id"], name: "index_requests_on_client_id"
     t.index ["reqid"], name: "index_requests_on_reqid", unique: true
     t.index ["state"], name: "index_requests_on_state", unique: true
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "sub", null: false
+    t.string "preferred_username"
+    t.string "name", null: false
+    t.string "email", null: false
+    t.boolean "email_verified"
+    t.string "username"
+    t.string "password"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["sub"], name: "index_users_on_sub", unique: true
   end
 
   add_foreign_key "requests", "clients", primary_key: "client_id"
