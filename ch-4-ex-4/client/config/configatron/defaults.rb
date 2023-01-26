@@ -5,7 +5,7 @@ configatron.oauth do |oauth|
     client.client_id = 'oauth-client-1'
     client.client_secret = 'oauth-client-secret-1'
     client.default_redirect_uri = 'http://localhost:4000/callback'
-    client.scope = 'movies food music'
+    client.scope = 'movies foods music'
   end
 
   oauth.auth_server do |auth_server|
