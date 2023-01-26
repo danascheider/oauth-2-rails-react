@@ -20,12 +20,80 @@ RSpec.describe 'Authorizations', type: :request do
 
     context 'when a client can be identified' do
       let(:client) { create(:client) }
+      let(:client_id) { client.client_id }
+      let(:scope) { client.scope.join(' ') }
+      let(:redirect_uri) { client.redirect_uris.first }
 
-      context 'when the redirect URI is invalid'
+      context 'when the redirect URI is invalid' do
+        let(:redirect_uri) { 'https://example.net/callback' }
 
-      context 'when all requested scopes are permitted'
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
 
-      context 'when disallowed scopes are requested'
+        it 'logs the error' do
+          authorize
+          expect(Rails.logger)
+            .to have_received(:error)
+                  .with("Mismatched redirect URI, expected https://example.com/callback, got https://example.net/callback")
+        end
+
+        it 'returns a success status' do
+          authorize
+          expect(response).to be_successful
+        end
+
+        it "doesn't create a Request object" do
+          expect { authorize }.not_to change(Request, :count)
+        end
+      end
+
+      context 'when all requested scopes are permitted' do
+        context 'when all client scopes are requested' do
+          it 'creates a request object' do
+            expect { authorize }.to change(Request, :count).from(0).to(1)
+          end
+
+          it 'uses the right scope for the request object' do
+            authorize
+            expect(Request.last.scope).to eq client.scope
+          end
+
+          it 'is successful' do
+            authorize
+            expect(response).to be_successful
+          end
+        end
+
+        context 'when a subset of client scopes are requested' do
+          let(:scope) { %w[movies foods] }
+        end
+      end
+
+      context 'when disallowed scopes are requested' do
+        let(:scope) { 'colors places movies' }
+        let(:expected_redirect_uri) { "#{redirect_uri}?error=invalid_scope"}
+
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it 'logs the error' do
+          authorize
+          expect(Rails.logger)
+            .to have_received(:error)
+                  .with('Invalid scope(s): colors,places')
+        end
+
+        it 'redirects' do
+          authorize
+          expect(response).to redirect_to(expected_redirect_uri)
+        end
+
+        it "doesn't create a Request object" do
+          expect { authorize }.not_to change(Request, :count)
+        end
+      end
 
       context 'when no state value is given'
     end
