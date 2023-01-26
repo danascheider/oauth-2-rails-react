@@ -6,14 +6,12 @@ RSpec.describe AuthorizationsController::AuthorizeService do
   subject(:perform) { described_class.new(controller, query_params:).perform }
 
   let(:controller) { instance_double(AuthorizationsController) }
-  let(:state) { SecureRandom.hex(8) }
-
   let(:query_params) do
     {
       client_id:,
       redirect_uri:,
       scope:,
-      state:,
+      state: SecureRandom.hex(8),
       response_type: 'code'
     }
   end
@@ -74,7 +72,18 @@ RSpec.describe AuthorizationsController::AuthorizeService do
         end
       end
 
-      context 'when a subset of client scopes are requested'
+      context 'when a subset of client scopes are requested' do
+        let(:scope) { 'foods' }
+
+        before do
+          allow(controller).to receive(:render)
+        end
+
+        it 'sets the scope on the Request object to the limited scope' do
+          perform
+          expect(Request.last.scope).to eq %w[foods]
+        end
+      end
     end
 
     context 'when requested scopes are not allowed' do

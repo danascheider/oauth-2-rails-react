@@ -66,7 +66,12 @@ RSpec.describe 'Authorizations', type: :request do
         end
 
         context 'when a subset of client scopes are requested' do
-          let(:scope) { %w[movies foods] }
+          let(:scope) { 'movies foods' }
+
+          it 'sets a limited scope on the Request object' do
+            authorize
+            expect(Request.last.scope).to eq(%w[movies foods])
+          end
         end
       end
 
