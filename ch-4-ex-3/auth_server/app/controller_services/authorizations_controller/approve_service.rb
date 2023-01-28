@@ -81,6 +81,9 @@ class AuthorizationsController < ApplicationController
           controller.redirect_to redirect_uri.to_s, status: :found, allow_other_host: true
         end
       else
+        # Note: If the redirect URI already has a query string, this code will replace it with the
+        #       access_denied error. This is fixed in exercise 4-4 so the error is appended to an
+        #       existing query string, if any.
         redirect_uri.query = URI.encode_www_form({ error: AuthorizationsController::ACCESS_DENIED })
 
         Rails.logger.info "User denied access for client '#{req.client_id}'"
