@@ -19,6 +19,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_29_190846) do
     t.string "client_id", null: false
     t.string "code", null: false
     t.string "scope", default: [], null: false, array: true
+    t.datetime "expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_authorization_codes_on_client_id"

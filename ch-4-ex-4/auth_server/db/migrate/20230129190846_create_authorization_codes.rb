@@ -11,6 +11,7 @@ class CreateAuthorizationCodes < ActiveRecord::Migration[7.0]
 
       t.string :code, null: false
       t.string :scope, array: true, null: false, default: []
+      t.datetime :expires_at
 
       t.index :code, unique: true
 
