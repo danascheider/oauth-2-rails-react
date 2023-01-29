@@ -6,9 +6,10 @@
   * [Persistence](#persistence)
   * [Client Endpoints and Front-End Behaviour](#client-endpoints-and-front-end-behaviour)
   * [Notes on Parameters in Rails](#notes-on-parameters-in-rails)
-  * [Users](#users)
-  * [Request Model](#request-model)
-  * [Nonce](#nonce)
+  * [Authorization Codes](#authorization-codes)
+    * [Expiration Time](#expiration-time)
+    * [Authorization Endpoint Request Field](#authorization-endpoint-request-field)
+    * [Scope Validation](#scope-validation)
   * [Client Credentials Grant Type](#client-credentials-grant-type)
   * [Password Grant Type](#password-grant-type)
   * [Issuing Tokens](#issuing-tokens)
@@ -45,23 +46,21 @@ The OAuth protocol is often very specific about how parameters and other data ne
 
 There is one important implication to the fact that query strings and post data are combined into a single `params` object: if the post data and query string contain the same key, one will overwrite the other since a hash can only contain a single value for each key. This prevents us from, say, raising an error when `client_id` is sent to the auth server's `/token` endpoint in both the query string and the post data the way an error is raised when the `client_id` is sent in both the `Authorization` header and the params. This is only a small issue in this application but it is worth being aware of if you decide to modify or extend the code.
 
-### Users
+### Authorization Codes
 
-In the book's examples, the authorization server has a concept of users that doesn't exist in the other components (client or protected resource). It seems the authors implemented this feature only partially. Since I'm not sure what the endgame was in including users, I also have only implemented it partially. However, because the authorization server requires user to be specified in certain parameters, I've made the client backend also aware of the user `sub` value so that it can request tokens for that user.
+There are three differences in how I'm implementing authorization codes in this exercise, in contrast to both the book's approach and previous exercises.
 
-In particular, I've modified the query string sent to the client's callback URI to include the user's `sub` value. When the authorization code is exchanged for a token, the client then includes a `user` param with this value that the auth server can use to identify the resource owner.
+#### Expiration Time
 
-Another case involving users is the `/approve` endpoint of the auth server. In this handler, when the `response_type` is set to `'token'`, a 500 response is returned if the user is missing. However, in the book's examples, if the `response_type` is `'code'`, there is no validation to make sure the user exists. I've changed this so the presence of a user is validated for both response types and an error returned if no user is present.
+Okta's [docs](https://www.oauth.com/oauth2-servers/authorization/the-authorization-response/) on OAuth 2 indicate that authorization codes should have an expiration period of not more than 10 minutes, and that 30-60 seconds is the more typical expiration time. Previous exercises, as well as the book, don't include an expiration time for authorization codes. However, here I'm including one.
 
-In the protected resource, all users have the same permissions, so in the client's `/produce` handler, I've used the last saved access token in the database regardless of who the user is. The protected resource is also agnostic to users, accepting any existing and un-expired token. (It also doesn't do other validations, such as verifying the client or that the access token's scopes are all among the client's scopes. Since this auth server only handles authorization for this protected resource, it's safe to assume all registered clients are able to access the resource.) Obviously if different users had access to different data, we would need to ensure the correct user's data is requested.
+#### Authorization Endpoint Request Field
 
-### Request Model
+In previous exercises, the `AuthorizationCode` model has had a JSON field called `authorization_endpoint_request`, including the attributes of the `Request` object connected to that code. However, I decided it made more sense to define attributes from that request as fields on the `AuthorizationCode` model directly. In previous exercises I maintained the `authorization_endpoint_request` field, however, since it doesn't serve a useful purpose, I haven't included it in this exercise.
 
-For this example I have diverged a bit from my earlier approach with the `Request` model. Previously, the `state` and `response_type` values were stored in a JSON object in the `query` field. However, I didn't see a good reason for this, so for this example (and probably future ones), I've decided to make these fields on the model.
+#### Scope Validation
 
-### Nonce
-
-The `AuthorizationsController#generate_token_response` method in the authorization server takes a `nonce` as an optional argument. In the `#token` endpoint, this value is passed in as the nonce associated with the `AuthorizationCode` when it was created. The book's example doesn't actually use the nonce in generating the tokens, though, nor is there a way to actually set a nonce for the authorization code model. Like users, this seems to be functionality that the authors didn't fully implement, or was intended as an extension for readers.
+Authorization codes should not have scopes more permissive than the associated client. In previous exercises, I left it up to the controller to ensure they do not. In this exercise, though, I've added a validation to the `AuthorizationCode` model validating the authorization code doesn't include disallowed scopes. Another option would have been a `before_validation` callback that silently removed any disallowed scopes. However, this approach would have a significant disadvantage: legitimate clients would ordinarily not request scopes that aren't allowed for them, since these scopes would not be made available for the user to select in the GUI. In order to request disallowed scopes, those scopes would have to be injected into the query string using a tool like [Burp Suite](https://portswigger.net/burp). There are two types of users who would try this: pen testers and malicious actors. We want to make sure that the latter, and, by extension, the former, are not able to gain access after tampering with requests in this way. It's better not to issue an authorization code if disallowed scopes are present.
 
 ### Client Credentials Grant Type
 
