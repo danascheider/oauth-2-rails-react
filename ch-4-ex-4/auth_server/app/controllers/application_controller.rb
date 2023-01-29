@@ -6,4 +6,8 @@ class ApplicationController < ActionController::Base
   def query_params
     request.query_parameters
   end
+
+  def body_params
+    request.request_parameters
+  end
 end

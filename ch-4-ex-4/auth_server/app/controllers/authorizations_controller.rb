@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class AuthorizationsController < ApplicationController
+  ACCESS_DENIED = 'access_denied'
   INVALID_SCOPE = 'invalid_scope'
 
   def authorize
@@ -8,6 +9,7 @@ class AuthorizationsController < ApplicationController
   end
 
   def approve
+    ApproveService.new(self, body_params:).perform
   end
 
   def token

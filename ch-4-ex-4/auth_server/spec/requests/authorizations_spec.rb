@@ -127,4 +127,203 @@ RSpec.describe 'Authorizations', type: :request do
       end
     end
   end
+
+  describe 'POST /approve' do
+    subject(:approve) { post approve_path, params: }
+
+    context 'when there is a matching Request object' do
+      let!(:request) { create(:request, response_type:, state:, scope:) }
+
+      let(:state) { SecureRandom.hex(8) }
+      let(:response_type) { 'code' }
+      let(:user) { 'someuser' }
+      let(:scope) { %w[movies foods music] }
+
+      context 'when the user has approved authorization' do
+        context 'when disallowed scopes are present' do
+          let(:params) do
+            URI.encode_www_form({
+              reqid: request.reqid,
+              user: 'doesntmatter',
+              response_type: 'token',
+              scope_movies: '1',
+              scope_foods: '0',
+              scope_animals: '1',
+              approve: true
+            })
+          end
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          it 'logs the error' do
+            approve
+            expect(Rails.logger)
+              .to have_received(:error)
+                    .with('Invalid scope(s) animals')
+          end
+
+          it 'redirects' do
+            approve
+            expect(response).to redirect_to "#{request.redirect_uri}?error=invalid_scope"
+          end
+
+          it 'destroys the Request object' do
+            expect { approve }.to change(Request, :count).from(1).to(0)
+          end
+        end
+
+        context 'when the response type is "code"' do
+          let(:params) do
+            URI.encode_www_form({
+              reqid: request.reqid,
+              user: user_sub,
+              response_type: 'code',
+              scope_foods: '1',
+              scope_movies: '1',
+              scope_music: '0',
+              approve: true
+            })
+          end
+
+          context 'when there is no matching user' do
+            let(:user_sub) { 'doesntmatter' }
+
+            before do
+              allow(Rails.logger).to receive(:error)
+            end
+
+            it 'logs the error' do
+              approve
+              expect(Rails.logger)
+                .to have_received(:error)
+                      .with("Unknown user 'doesntmatter'")
+            end
+
+            it "doesn't issue a code" do
+              expect { approve }.not_to change(AuthorizationCode, :count)
+            end
+
+            it 'destroys the Request object' do
+              expect { approve }.to change(Request, :count).from(1).to(0)
+            end
+
+            it 'returns a 500 error' do
+              approve
+              expect(response.status).to eq 500
+            end
+          end
+
+          context 'when there is a matching user' do
+            let(:user) { create(:user) }
+            let(:user_sub) { user.sub }
+            let(:expected_redirect_uri) do
+              "#{request.redirect_uri}?code=#{AuthorizationCode.last.code}&state=#{request.state}"
+            end
+
+            before do
+              allow(Rails.logger).to receive(:info)
+            end
+
+            it 'logs the user' do
+              approve
+              expect(Rails.logger).to have_received(:info).with "User '#{user_sub}'"
+            end
+
+            it 'creates an authorization code' do
+              expect { approve }.to change(AuthorizationCode, :count).from(0).to(1)
+            end
+
+            it 'assigns the correct values', :aggregate_failures do
+              approve
+              expect(AuthorizationCode.last.user).to eq user
+              expect(AuthorizationCode.last.client).to eq request.client
+              expect(AuthorizationCode.last.scope).to eq request.scope
+              expect(AuthorizationCode.last.expires_at).to be_present
+            end
+
+            it 'logs the authorization code' do
+              approve
+              expect(Rails.logger)
+                .to have_received(:info)
+                      .with("Issuing authorization code '#{AuthorizationCode.last.code}' for client '#{request.client_id}' and user '#{user_sub}'")
+            end
+
+            it 'destroys the Request object' do
+              expect { approve }.to change(Request, :count).from(1).to(0)
+            end
+
+            it 'redirects' do
+              approve
+              expect(response).to redirect_to expected_redirect_uri
+            end
+          end
+        end
+
+        context 'when the response type is "token"' do
+          let(:response_type) { 'token' }
+        end
+
+        context 'when the response type is something else'
+      end
+
+      context 'when the user has denied authorization' do
+        let(:params) do
+          URI.encode_www_form({
+            reqid: request.reqid,
+            user: 'doesntmatter',
+            deny: true
+          })
+        end
+
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it 'logs the error' do
+          approve
+          expect(Rails.logger)
+            .to have_received(:error)
+                  .with("User denied access for client '#{request.client_id}'")
+        end
+
+        it 'redirects with an error' do
+          approve
+          expect(response)
+            .to redirect_to("#{request.redirect_uri}?error=access_denied")
+        end
+
+        it 'destroys the request object' do
+          expect { approve }.to change(Request, :count).from(1).to(0)
+        end
+      end
+    end
+
+    context 'when no matching Request object can be found' do
+      let(:params) do
+        URI.encode_www_form({
+          reqid: 'doesntmatter',
+          user: 'doesntmatter',
+          approve: true
+        })
+      end
+
+      before do
+        allow(Rails.logger).to receive(:error)
+      end
+
+      it 'logs the error' do
+        approve
+        expect(Rails.logger)
+          .to have_received(:error)
+                .with("No matching authorization request for reqid 'doesntmatter'")
+      end
+
+      it 'returns status 400' do
+        approve
+        expect(response).to be_bad_request
+      end
+    end
+  end
 end
