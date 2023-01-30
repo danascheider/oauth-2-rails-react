@@ -3,6 +3,7 @@
 class AuthorizationsController < ApplicationController
   ACCESS_DENIED = 'access_denied'
   INVALID_SCOPE = 'invalid_scope'
+  UNSUPPORTED_RESPONSE_TYPE = 'unsupported_response_type'
 
   def authorize
     AuthorizeService.new(self, query_params:).perform

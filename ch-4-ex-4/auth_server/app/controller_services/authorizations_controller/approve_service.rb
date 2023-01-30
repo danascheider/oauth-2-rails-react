@@ -44,23 +44,29 @@ class AuthorizationsController < ApplicationController
 
         Rails.logger.info "User '#{user.sub}'"
 
-        code = SecureRandom.hex(8)
+        if body_params[:response_type] == 'code'
+          code = SecureRandom.hex(8)
 
-        AuthorizationCode.create!(
-          client: req.client,
-          user:,
-          code:,
-          scope: req.scope,
-          expires_at: Time.now + 30.seconds
-        )
+          AuthorizationCode.create!(
+            client: req.client,
+            user:,
+            code:,
+            scope: req.scope,
+            expires_at: Time.now + 30.seconds
+          )
 
-        Rails.logger.info "Issuing authorization code '#{code}' for client '#{req.client_id}' and user '#{user.sub}'"
+          Rails.logger.info "Issuing authorization code '#{code}' for client '#{req.client_id}' and user '#{user.sub}'"
 
-        response_params = { code: }
-        response_params[:state] = req.state if req.state.present?
+          response_params = { code: }
+          response_params[:state] = req.state if req.state.present?
 
-        add_query(**response_params)
-        controller.redirect_to redirect_uri.to_s, status: :found, allow_other_host: true
+          add_query(**response_params)
+          controller.redirect_to redirect_uri.to_s, status: :found, allow_other_host: true
+        else
+          add_query(error: AuthorizationsController::UNSUPPORTED_RESPONSE_TYPE)
+          Rails.logger.error "Unsupported response type '#{body_params[:response_type]}'"
+          controller.redirect_to redirect_uri.to_s, status: :found, allow_other_host: true
+        end
       else
         add_query(error: AuthorizationsController::ACCESS_DENIED)
         Rails.logger.error "User denied access for client '#{req.client_id}'"

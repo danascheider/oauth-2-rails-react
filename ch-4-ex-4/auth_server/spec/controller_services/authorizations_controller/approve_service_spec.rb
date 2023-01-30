@@ -157,6 +157,95 @@ RSpec.describe AuthorizationsController::ApproveService do
       let(:response_type) { 'token' }
     end
 
+    context 'when the response type is something else' do
+      let(:scope) { %w[foods movies music] }
+
+      let(:body_params) do
+        {
+          reqid: request.reqid,
+          response_type: 'foo',
+          state: request.state,
+          user: user_sub,
+          scope_foods: '1',
+          scope_movies: '1',
+          scope_music: '1',
+          approve: true
+        }
+      end
+
+      context 'when there is no matching user' do
+        let(:user_sub) { 'doesntmatter' }
+
+        before do
+          allow(Rails.logger).to receive(:error)
+          allow(controller).to receive(:render)
+        end
+
+        it 'logs the error' do
+          perform
+          expect(Rails.logger).to have_received(:error).with("Unknown user 'doesntmatter'")
+        end
+
+        it "doesn't create an authorization code" do
+          expect { perform }.not_to change(AuthorizationCode, :count)
+        end
+
+        it 'destroys the Request object' do
+          expect { perform }.to change(Request, :count).from(1).to(0)
+        end
+
+        it 'renders the template with an error response' do
+          perform
+          expect(controller)
+            .to have_received(:render)
+                  .with(
+                    'error',
+                    locals: { error: "Unknown user 'doesntmatter'" },
+                    status: :internal_server_error
+                  )
+        end
+      end
+
+      context 'when there is a matching user' do
+        let(:user_sub) { create(:user).sub }
+
+        before do
+          allow(Rails.logger).to receive(:info)
+          allow(Rails.logger).to receive(:error)
+          allow(controller).to receive(:redirect_to)
+        end
+
+        it 'logs the user' do
+          perform
+          expect(Rails.logger).to have_received(:info).with("User '#{user_sub}'")
+        end
+
+        it 'logs the error' do
+          perform
+          expect(Rails.logger).to have_received(:error).with("Unsupported response type 'foo'")
+        end
+
+        it "doesn't create an authorization code" do
+          expect { perform }.not_to change(AuthorizationCode, :count)
+        end
+
+        it 'destroys the Request object' do
+          expect { perform }.to change(Request, :count).from(1).to(0)
+        end
+
+        it 'redirects with an error' do
+          perform
+          expect(controller)
+            .to have_received(:redirect_to)
+                  .with(
+                    "#{request.redirect_uri}&error=unsupported_response_type",
+                    status: :found,
+                    allow_other_host: true
+                  )
+        end
+      end
+    end
+
     context 'when disallowed scopes are present' do
       let(:scope) { %w[movies animals colors] }
 

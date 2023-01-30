@@ -265,7 +265,68 @@ RSpec.describe 'Authorizations', type: :request do
           let(:response_type) { 'token' }
         end
 
-        context 'when the response type is something else'
+        context 'when the response type is something else' do
+          let(:params) do
+            {
+              reqid: request.reqid,
+              response_type: 'foo',
+              state: request.state,
+              user: user_sub,
+              scope_foods: '1',
+              scope_movies: '1',
+              scope_music: '1',
+              approve: true
+            }
+          end
+
+          before do
+            allow(Rails.logger).to receive(:error)
+          end
+
+          context 'when there is no matching user' do
+            let(:user_sub) { 'doesntmatter' }
+
+            it 'logs the error' do
+              approve
+              expect(Rails.logger).to have_received(:error).with("Unknown user 'doesntmatter'")
+            end
+
+            it "doesn't create an authorization code" do
+              expect { approve }.not_to change(AuthorizationCode, :count)
+            end
+
+            it 'destroys the request object' do
+              expect { approve }.to change(Request, :count).from(1).to(0)
+            end
+
+            it 'returns status 500' do
+              approve
+              expect(response.status).to eq 500
+            end
+          end
+
+          context 'when there is a matching user' do
+            let(:user_sub) { create(:user).sub }
+
+            it 'logs the error' do
+              approve
+              expect(Rails.logger).to have_received(:error).with("Unsupported response type 'foo'")
+            end
+
+            it "doesn't create an authorization code" do
+              expect { approve }.not_to change(AuthorizationCode, :count)
+            end
+
+            it 'destroys the request object' do
+              expect { approve }.to change(Request, :count).from(1).to(0)
+            end
+
+            it 'redirects with an error' do
+              approve
+              expect(response).to redirect_to "#{request.redirect_uri}?error=unsupported_response_type"
+            end
+          end
+        end
       end
 
       context 'when the user has denied authorization' do
