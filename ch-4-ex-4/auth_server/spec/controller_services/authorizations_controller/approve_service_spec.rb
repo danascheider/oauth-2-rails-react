@@ -154,7 +154,107 @@ RSpec.describe AuthorizationsController::ApproveService do
     end
 
     context 'when the response_type is "token"' do
-      let(:response_type) { 'token' }
+      let(:scope) { %w[foods movies music] }
+
+      let(:body_params) do
+        {
+          reqid: request.reqid,
+          response_type: 'token',
+          state: request.state,
+          user: user_sub,
+          scope_foods: '1',
+          scope_movies: '1',
+          scope_music: '1',
+          approve: true
+        }
+      end
+
+      context 'when there is a matching user' do
+        let(:user) { create(:user) }
+        let(:user_sub) { user.sub }
+
+        context 'when the user has an existing refresh token' do
+          let!(:refresh_token) { create(:refresh_token, client: request.client, user:, scope:) }
+
+          let(:expected_redirect_uri) do
+            query = {
+              access_token: AccessToken.last.token,
+              refresh_token: refresh_token.token,
+              token_type: 'Bearer',
+              scope: scope.join(' '),
+              client_id: request.client_id,
+              user: user_sub
+            }
+            uri = URI.parse(request.redirect_uri)
+            query = CGI.parse(uri.query || '').merge(query)
+            uri.query = URI.encode_www_form(query)
+            uri.to_s
+          end
+
+          before do
+            allow(controller).to receive(:redirect_to)
+          end
+
+          it 'creates an access token' do
+            expect { perform }.to change(AccessToken, :count).from(0).to(1)
+          end
+
+          it 'assigns the correct attributes', :aggregate_failures do
+            perform
+            expect(AccessToken.last.user).to eq user
+            expect(AccessToken.last.client).to eq request.client
+            expect(AccessToken.last.scope).to eq scope
+          end
+
+          it "doesn't create an authorization code" do
+            expect { perform }.not_to change(AuthorizationCode, :count)
+          end
+
+          it "doesn't create a new refresh token" do
+            expect { perform }.not_to change(RefreshToken, :count)
+          end
+
+          it 'redirects with the tokens' do
+            perform
+            expect(controller)
+              .to have_received(:redirect_to)
+                    .with(expected_redirect_uri, status: :found, allow_other_host: true)
+          end
+        end
+      end
+
+      context 'when there is no matching user' do
+        let(:user_sub) { 'doesntmatter' }
+
+        before do
+          allow(Rails.logger).to receive(:error)
+          allow(controller).to receive(:render)
+        end
+
+        it 'logs the error' do
+          perform
+          expect(Rails.logger).to have_received(:error).with("Unknown user 'doesntmatter'")
+        end
+
+        it "doesn't create an authorization code" do
+          expect { perform }.not_to change(AuthorizationCode, :count)
+        end
+
+        it 'destroys the request object' do
+          expect { perform }.to change(Request, :count).from(1).to(0)
+        end
+
+        it 'renders the template with an error status' do
+          perform
+          expect(controller)
+            .to have_received(:render)
+                  .with(
+                    'error',
+                    locals: { error: "Unknown user '#{user_sub}'" },
+                    status: :internal_server_error
+                  )
+        end
+      end
     end
 
     context 'when the response type is something else' do

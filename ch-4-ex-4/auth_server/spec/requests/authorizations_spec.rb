@@ -205,6 +205,14 @@ RSpec.describe 'Authorizations', type: :request do
               expect { approve }.not_to change(AuthorizationCode, :count)
             end
 
+            it "doesn't issue an access token" do
+              expect { approve }.not_to change(AccessToken, :count)
+            end
+
+            it "doesn't issue a refresh token" do
+              expect { approve }.not_to change(RefreshToken, :count)
+            end
+
             it 'destroys the Request object' do
               expect { approve }.to change(Request, :count).from(1).to(0)
             end
@@ -235,6 +243,14 @@ RSpec.describe 'Authorizations', type: :request do
               expect { approve }.to change(AuthorizationCode, :count).from(0).to(1)
             end
 
+            it "doesn't create an access token" do
+              expect { approve }.not_to change(AccessToken, :count)
+            end
+
+            it "doesn't create a refresh token" do
+              expect { approve }.not_to change(RefreshToken, :count)
+            end
+
             it 'assigns the correct values', :aggregate_failures do
               approve
               expect(AuthorizationCode.last.user).to eq user
@@ -262,7 +278,101 @@ RSpec.describe 'Authorizations', type: :request do
         end
 
         context 'when the response type is "token"' do
-          let(:response_type) { 'token' }
+          let(:params) do
+            {
+              reqid: request.reqid,
+              response_type: 'token',
+              state: request.state,
+              user: user_sub,
+              scope_movies: '1',
+              scope_foods: '1',
+              scope_music: '1',
+              approve: true
+            }
+          end
+
+          context 'when there is a matching user' do
+            let(:user) { create(:user) }
+            let(:user_sub) { user.sub }
+
+            context 'when the user has an existing refresh token' do
+              let!(:refresh_token) { create(:refresh_token, client: request.client, user:, scope:) }
+
+              let(:expected_redirect_uri) do
+                query = {
+                  access_token: AccessToken.last.token,
+                  refresh_token: refresh_token.token,
+                  token_type: 'Bearer',
+                  scope: scope.join(' '),
+                  client_id: request.client_id,
+                  user: user_sub
+                }
+                uri = URI.parse(request.redirect_uri)
+                uri.query = URI.encode_www_form(query)
+                uri.to_s
+              end
+
+              it 'creates an access token' do
+                expect { approve }.to change(AccessToken, :count).from(0).to(1)
+              end
+
+              it 'assigns the correct attributes', :aggregate_failures do
+                approve
+                expect(AccessToken.last.user).to eq user
+                expect(AccessToken.last.client).to eq request.client
+                expect(AccessToken.last.scope).to eq scope
+              end
+
+              it "doesn't create an authorization code" do
+                expect { approve }.not_to change(AuthorizationCode, :count)
+              end
+
+              it "doesn't create a new refresh token" do
+                expect { approve }.not_to change(RefreshToken, :count)
+              end
+
+              it 'redirects with the tokens' do
+                approve
+                expect(response).to redirect_to(expected_redirect_uri)
+              end
+            end
+
+            context "when the user doesn't have an existing refresh token"
+          end
+
+          context 'when there is no matching user' do
+            let(:user_sub) { 'doesntmatter' }
+
+            before do
+              allow(Rails.logger).to receive(:error)
+            end
+
+            it 'logs the error' do
+              approve
+              expect(Rails.logger).to have_received(:error).with("Unknown user 'doesntmatter'")
+            end
+
+            it "doesn't create an authorization code" do
+              expect { approve }.not_to change(AuthorizationCode, :count)
+            end
+
+            it "doesn't create an access token" do
+              expect { approve }.not_to change(AccessToken, :count)
+            end
+
+            it "doesn't create a refresh token" do
+              expect { approve }.not_to change(RefreshToken, :count)
+            end
+
+            it 'destroys the request object' do
+              expect { approve }.to change(Request, :count).from(1).to(0)
+            end
+
+            it 'returns status 500' do
+              approve
+              expect(response.status).to eq 500
+            end
+          end
         end
 
         context 'when the response type is something else' do

@@ -2,6 +2,8 @@
 
 class AuthorizationsController < ApplicationController
   class ApproveService
+    include TokenHelper
+
     def initialize(controller, body_params:)
       @controller = controller
       @body_params = body_params
@@ -62,6 +64,15 @@ class AuthorizationsController < ApplicationController
 
           add_query(**response_params)
           controller.redirect_to redirect_uri.to_s, status: :found, allow_other_host: true
+        elsif body_params[:response_type] == 'token'
+          tokens = generate_token_response(
+                     client:,
+                     user:,
+                     scope: request_scope,
+                     generate_refresh_token: true
+                   )
+          add_query(**tokens)
+          controller.redirect_to redirect_uri.to_s, status: :found, allow_other_host: true
         else
           add_query(error: AuthorizationsController::UNSUPPORTED_RESPONSE_TYPE)
           Rails.logger.error "Unsupported response type '#{body_params[:response_type]}'"
@@ -86,6 +97,10 @@ class AuthorizationsController < ApplicationController
 
     def user
       @user ||= User.find_by(sub: body_params[:user])
+    end
+
+    def client
+      @client ||= req&.client
     end
 
     def redirect_uri
