@@ -29,9 +29,9 @@ const CallbackPage = () => {
               }
             })
         })
-
-        return () => mountedRef.current = false
     }
+
+    return () => mountedRef.current = false
   }, [error, accessToken, queryParams])
 
   return(
