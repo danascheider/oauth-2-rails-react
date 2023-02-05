@@ -337,7 +337,76 @@ RSpec.describe 'Authorizations', type: :request do
               end
             end
 
-            context "when the user doesn't have an existing refresh token"
+            context "when the user doesn't have an existing refresh token" do
+              let(:expected_redirect_uri) do
+                query = {
+                  access_token: AccessToken.last.token,
+                  refresh_token: RefreshToken.last.token,
+                  token_type: 'Bearer',
+                  scope: scope.join(' '),
+                  client_id: request.client_id,
+                  user: user_sub
+                }
+                uri = URI.parse(request.redirect_uri)
+                uri.query = URI.encode_www_form(query)
+                uri.to_s
+              end
+
+              it 'creates a new refresh token' do
+                expect { approve }.to change(RefreshToken, :count).from(0).to(1)
+              end
+
+              it 'sets the correct attributes', :aggregate_failures do
+                approve
+                expect(RefreshToken.last.user).to eq user
+                expect(RefreshToken.last.client).to eq request.client
+                expect(RefreshToken.last.scope).to eq scope
+              end
+
+              it 'redirects to the correct URI' do
+                approve
+                expect(response).to redirect_to(expected_redirect_uri)
+              end
+            end
+
+            context 'when there is an existing refresh token for the user for a different client' do
+              let!(:refresh_token) { create(:refresh_token, user:, scope:) }
+
+              let(:expected_redirect_uri) do
+                query = {
+                  access_token: AccessToken.last.token,
+                  refresh_token: RefreshToken.last.token,
+                  token_type: 'Bearer',
+                  scope: scope.join(' '),
+                  client_id: request.client_id,
+                  user: user_sub
+                }
+                uri = URI.parse(request.redirect_uri)
+                uri.query = URI.encode_www_form(query)
+                uri.to_s
+              end
+
+              it 'creates a new refresh token' do
+                expect { approve }.to change(RefreshToken, :count).from(1).to(2)
+              end
+
+              it "doesn't use the same refresh token" do
+                approve
+                expect(RefreshToken.last).not_to eq refresh_token
+              end
+
+              it 'sets the correct attributes', :aggregate_failures do
+                approve
+                expect(RefreshToken.last.user).to eq user
+                expect(RefreshToken.last.client).to eq request.client
+                expect(RefreshToken.last.scope).to eq scope
+              end
+
+              it 'redirects to the correct URI' do
+                approve
+                expect(response).to redirect_to(expected_redirect_uri)
+              end
+            end
           end
 
           context 'when there is no matching user' do
