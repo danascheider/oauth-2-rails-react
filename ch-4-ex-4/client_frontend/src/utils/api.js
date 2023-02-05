@@ -6,6 +6,12 @@ export const getAuthorize = () => {
   return fetch(uri, { redirect: 'manual' })
 }
 
+export const getCallback = query => {
+  const uri = query ? `${baseUri}/callback?${query}` : `${baseUri}/callback`
+
+  return fetch(uri)
+}
+
 export const getToken = () => {
   const uri = `${baseUri}/token`
 
