@@ -566,4 +566,286 @@ RSpec.describe 'Authorizations', type: :request do
       end
     end
   end
+
+  describe 'POST /token' do
+    subject(:token) { post token_path, params:, headers: }
+
+    context 'when the client authenticates with the auth header' do
+      let(:headers) do
+        {
+          'Content-Type' => 'application/x-www-form-urlencoded',
+          'Authorization' => "Basic #{client_credentials}"
+        }
+      end
+
+      context 'when there is no matching client' do
+        let(:client_credentials) { Base64.encode64('foo:bar') }
+
+        let(:params) do
+          URI.encode_www_form({
+            grant_type: 'authorization_code',
+            code: SecureRandom.hex(8)
+          })
+        end
+
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it 'logs the error' do
+          token
+          expect(Rails.logger)
+            .to have_received(:error)
+                  .with("Unknown client 'foo'")
+        end
+
+        it "doesn't issue an access token" do
+          expect { token }.not_to change(AccessToken, :count)
+        end
+
+        it "doesn't issue a refresh token" do
+          expect { token }.not_to change(RefreshToken, :count)
+        end
+
+        it 'renders an error' do
+          token
+          expect(JSON.parse(response.body))
+            .to eq({ 'error' => 'invalid_client' })
+        end
+
+        it 'returns an unauthorized status' do
+          token
+          expect(response).to be_unauthorized
+        end
+      end
+
+      context "when the client credentials don't match" do
+        let!(:client) { create(:client) }
+        let(:client_credentials) { Base64.encode64("#{client.client_id}:foobar") }
+
+        let(:params) do
+          URI.encode_www_form({
+            grant_type: 'authorization_code',
+            code: SecureRandom.hex(8)
+          })
+        end
+
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it 'logs the error' do
+          token
+          expect(Rails.logger)
+            .to have_received(:error)
+                  .with("Mismatched client secret, expected '#{client.client_secret}', got 'foobar'")
+        end
+
+        it "doesn't issue an access token" do
+          expect { token }.not_to change(AccessToken, :count)
+        end
+
+        it "doesn't issue a refresh token" do
+          expect { token }.not_to change(RefreshToken, :count)
+        end
+
+        it 'renders an error' do
+          token
+          expect(JSON.parse(response.body))
+            .to eq({ 'error' => 'invalid_client' })
+        end
+
+        it 'returns an unauthorized status' do
+          token
+          expect(response).to be_unauthorized
+        end
+      end
+
+      context 'when the client is authenticated successfully'
+    end
+
+    context 'when the client authenticates with body params' do
+      let(:headers) do
+        {
+          'Content-Type' => 'application/x-www-form-urlencoded'
+        }
+      end
+
+      let(:params) do
+        URI.encode_www_form({
+          client_id:,
+          client_secret:,
+          grant_type: 'authorization_code',
+          code: SecureRandom.hex(8)
+        })
+      end
+
+      context 'when there is no matching client' do
+        let(:client_id) { 'foo' }
+        let(:client_secret) { 'bar' }
+
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it 'logs the error' do
+          token
+          expect(Rails.logger).to have_received(:error).with("Unknown client 'foo'")
+        end
+
+        it "doesn't issue an access token" do
+          expect { token }.not_to change(AccessToken, :count)
+        end
+
+        it "doesn't issue a refresh token" do
+          expect { token }.not_to change(RefreshToken, :count)
+        end
+
+        it 'renders an error' do
+          token
+          expect(JSON.parse(response.body))
+            .to eq({ 'error' => 'invalid_client' })
+        end
+
+        it 'returns an unauthorized response' do
+          token
+          expect(response).to be_unauthorized
+        end
+      end
+
+      context "when the client credentials don't match" do
+        let!(:client) { create(:client) }
+        let(:client_id) { client.client_id }
+        let(:client_secret) { nil }
+
+        before do
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it 'logs the error' do
+          token
+          expect(Rails.logger)
+            .to have_received(:error)
+                  .with("Mismatched client secret, expected '#{client.client_secret}', got ''")
+        end
+
+        it "doesn't issue an access token" do
+          expect { token }.not_to change(AccessToken, :count)
+        end
+
+        it "doesn't issue a refresh token" do
+          expect { token }.not_to change(RefreshToken, :count)
+        end
+
+        it 'renders an error' do
+          token
+          expect(JSON.parse(response.body))
+            .to eq({ 'error' => 'invalid_client' })
+        end
+
+        it 'returns an unauthorized response' do
+          token
+          expect(response).to be_unauthorized
+        end
+      end
+
+      context 'when the client is authenticated successfully'
+    end
+
+    context "when the client doesn't authenticate" do
+      let(:params) do
+        URI.encode_www_form({
+          grant_type: 'authorization_code',
+          code: SecureRandom.hex(8)
+        })
+      end
+
+      let(:headers) do
+        {
+          'Content-Type' => 'application/x-www-form-urlencoded'
+        }
+      end
+
+      before do
+        allow(Rails.logger).to receive(:error)
+      end
+
+      it 'logs the error' do
+        token
+        expect(Rails.logger)
+          .to have_received(:error)
+                .with("Unknown client ''")
+      end
+
+      it "doesn't issue an access token" do
+        expect { token }.not_to change(AccessToken, :count)
+      end
+
+      it "doesn't issue a refresh token" do
+        expect { token }.not_to change(RefreshToken, :count)
+      end
+
+      it 'renders an error' do
+        token
+        expect(JSON.parse(response.body))
+          .to eq({ 'error' => 'invalid_client' })
+      end
+
+      it 'returns an unauthorized response' do
+        token
+        expect(response).to be_unauthorized
+      end
+    end
+
+    context 'when the client attempts to authenticate with multiple methods' do
+      let!(:client) { create(:client) }
+      let(:client_credentials) { Base64.encode64("#{client.client_id}:#{client.client_secret}") }
+
+      let(:headers) do
+        {
+          'Content-Type' => 'application/x-www-form-urlencoded',
+          'Authorization' => "Basic #{client_credentials}"
+        }
+      end
+
+      let(:params) do
+        URI.encode_www_form({
+          client_id: client.client_id,
+          client_secret: client.client_secret,
+          grant_type: 'authorization_code',
+          code: SecureRandom.hex(8)
+        })
+      end
+
+      before do
+        allow(Rails.logger).to receive(:error)
+      end
+
+      it 'logs the error' do
+        token
+        expect(Rails.logger)
+          .to have_received(:error)
+                .with('Client attempted to authenticate with multiple methods')
+      end
+
+      it "doesn't issue an access token" do
+        expect { token }.not_to change(AccessToken, :count)
+      end
+
+      it "doesn't issue a refresh token" do
+        expect { token }.not_to change(RefreshToken, :count)
+      end
+
+      it 'renders an error' do
+        token
+        expect(JSON.parse(response.body))
+          .to eq({ 'error' => 'invalid_client' })
+      end
+
+      it 'returns an unauthorized status' do
+        token
+        expect(response).to be_unauthorized
+      end
+    end
+  end
 end
